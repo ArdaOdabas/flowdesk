@@ -1,41 +1,27 @@
 <div align="center">
-
-# FlowDesk
-
-**A desktop workspace for flow cytometry analysis.**
-Open FCS files, gate them, compensate them, and export the numbers — entirely on your own machine.
-
+  <img src="docs/flowdesk-cover.svg" alt="FlowDesk — flow cytometry analysis" width="100%">
+  <p>Open FCS files, draw gates, and compare population statistics in one desktop workspace.</p>
+  <p><a href="#try-the-demo"><strong>Try the demo</strong></a> · <a href="#run-flowdesk">Run FlowDesk</a> · <a href="https://github.com/ArdaOdabas/flowdesk/releases">Releases</a></p>
 </div>
 
-![FlowDesk showing a gated T-cell panel: scatter plots, population hierarchy and statistics](docs/flowdesk.png)
+![FlowDesk workspace with scatter plots, a gated T-cell population tree, and statistics](docs/flowdesk.png)
 
----
+<p align="center"><sub>The built-in T-cell demo shows two synthetic tubes, their gates, and the resulting population statistics.</sub></p>
 
-## Why
+## From FCS files to population statistics
 
-Flow cytometry analysis usually means a licence seat, a login, and your raw data living on someone
-else's server. FlowDesk is a small desktop application that opens an FCS file, lets you build a
-gating strategy, and gives you the statistics back. Nothing is uploaded, nothing phones home, and
-the file you opened is never modified.
+1. **Open your tubes.** Import FCS 3.1 or `.lmd` files. Use the embedded spillover matrix or adjust compensation by hand. Switch between linear and biexponential scaling.
+2. **Build a gate tree.** Draw polygon, rectangle, and quadrant gates. Save the strategy as a template and apply it to other tubes.
+3. **Review and export.** Compare event counts, frequencies, and medians by population. Export CSV, PNG, or FCS.
 
-## What it does
+## Try the demo
 
-| | |
-|---|---|
-| **Reads FCS 3.1 and `.lmd`** | An independent implementation of the specification published by ISAC |
-| **Gates** | Polygon, rectangle and quadrant gates, organised into a population hierarchy |
-| **Compensation** | From the spillover matrix stored in the file, or edited by hand |
-| **Transforms** | Biexponential and linear scaling for fluorescence channels |
-| **Statistics** | Per-population counts, frequencies and medians, with columns you choose |
-| **Templates** | Save a gating strategy once and reapply it to every other tube |
-| **Export** | CSV, PNG and FCS, through the system save dialog |
+Select **Load demo data** to explore two synthetic tubes. Click a population in the gate tree to see its plots and statistics.
 
-Open the application and press **Load demo data** to see the whole workflow with two synthetic
-tubes before you point it at anything of your own.
+## Run FlowDesk
 
-## Install
-
-Requires [Node.js](https://nodejs.org/) and npm.
+<details>
+<summary>Run from source with Node.js and npm</summary>
 
 ```sh
 git clone https://github.com/ArdaOdabas/flowdesk.git
@@ -44,26 +30,6 @@ npm install
 npm start
 ```
 
-## Build a standalone application
+</details>
 
-```sh
-npm run dist:mac    # macOS, universal
-npm run dist:win    # Windows, x64
-npm run dist:dmg    # macOS disk image
-```
-
-The packaging scripts expect `build/icon.icns`, `build/Info.extra.plist` and `build/make_dmg.sh`.
-Those are not in this repository: add your own icon and packaging metadata, or drop the `--icon`
-and `--extend-info` flags from the scripts in `package.json`.
-
-## Your data stays yours
-
-The renderer runs with `contextIsolation` and `sandbox` enabled and no Node integration; the preload
-bridge exposes only what the interface needs. Links open in the system browser rather than inside
-the application. FCS files are read from disk and parsed locally — there is no network code in the
-analysis path at all.
-
-## Licence
-
-MIT — see [LICENSE](LICENSE). The relationship to the FCS standard and to other cytometry software
-is set out in [NOTICE](NOTICE).
+MIT · [Licence](LICENSE) · [Third-party notices](NOTICE)
