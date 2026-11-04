@@ -1,0 +1,18 @@
+FlowDesk
+Third-party content notice
+
+All source code in this repository is original work, released under the MIT
+licence in LICENSE.
+
+FlowDesk reads Flow Cytometry Standard files. FCS 3.1 is an open specification
+published by the International Society for Advancement of Cytometry (ISAC);
+this is an independent implementation of that published specification. No code,
+data or resource from FlowJo, FCS Express or any other cytometry product is
+included or was used as a source.
+
+The application shell is Electron (MIT), obtained from npm at build time and
+not committed here. No third-party JavaScript library, font or icon set is
+embedded in FlowDesk.html.
+
+Flow cytometry data files you open remain yours; FlowDesk reads them locally
+and sends nothing anywhere.

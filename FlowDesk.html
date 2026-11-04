@@ -1,0 +1,2182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowDesk</title>
+<style>
+:root{--bg:#e8ebef;--panel:#f5f6f8;--border:#b9c0c8;--text:#1d232a;--accent:#2b6cb0;--sel:#cfe0f5}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font:12px "Segoe UI",-apple-system,system-ui,sans-serif;color:var(--text);background:var(--bg);overflow:hidden;user-select:none}
+#app{display:grid;grid-template-rows:24px 34px 1fr 22px;height:100vh}
+#menubar{display:flex;background:#fff;border-bottom:1px solid var(--border);align-items:stretch}
+#menubar .mb{padding:4px 10px;cursor:default}
+#menubar .mb:hover,#menubar .mb.open{background:#dde7f3}
+#menubar .brand{margin-left:auto;padding:4px 12px;color:#6b7785;font-weight:600}
+#toolbar{display:flex;align-items:center;gap:2px;padding:3px 6px;background:var(--panel);border-bottom:1px solid var(--border)}
+.tb{width:28px;height:26px;border:1px solid transparent;border-radius:3px;background:none;display:grid;place-items:center;cursor:pointer;padding:0;color:#333}
+.tb:hover{background:#e3ebf5;border-color:#b8c8dc}
+.tb.on{background:var(--sel);border-color:#7ea4d1}
+.tb svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.tsep{width:1px;height:20px;background:var(--border);margin:0 5px}
+#main{display:grid;grid-template-columns:250px 1fr;min-height:0}
+#side{display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--panel);min-height:0}
+.sect{border-bottom:1px solid var(--border);padding:6px 8px}
+.sect.grow{flex:1;display:flex;flex-direction:column;min-height:0;padding:0}
+.sh{font-weight:600;color:#3a4552;padding:4px 0;display:flex;align-items:center;gap:4px}
+.sect.grow .sh{padding:6px 8px;border-bottom:1px solid #d7dce2}
+.sh .sp{flex:1}
+.sbtn{border:1px solid #b8c2cc;background:#fff;border-radius:3px;padding:2px 7px;font:inherit;cursor:pointer}
+.sbtn:hover{background:#eef3f9}
+#info table{width:100%;border-collapse:collapse}
+#info td{padding:1px 0;vertical-align:top}
+#info td:first-child{color:#5a6573;width:84px}
+#info td:last-child{word-break:break-all}
+#tubes{overflow:auto;flex:1;background:#fff}
+.trow{display:grid;grid-template-columns:14px 1fr auto;gap:6px;align-items:center;padding:4px 8px;border-bottom:1px solid #eef0f3;cursor:pointer}
+.trow:hover{background:#f1f5fa}
+.trow.on{background:var(--sel)}
+.trow .dot{width:10px;height:10px;border-radius:50%;background:#2a9fd6}
+.trow .tn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow .ts{color:#6b7785;font-size:11px}
+#ws{position:relative;overflow:auto;background:#fff}
+#wsInner{position:relative;min-width:100%;min-height:100%}
+#empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+#empty .card{pointer-events:auto;text-align:center;border:2px dashed #c3ccd6;border-radius:10px;padding:28px 40px;color:#55606d;background:#fafbfc}
+#empty .card h2{margin:0 0 6px;font-size:18px;color:#2c3540}
+#empty .card p{margin:4px 0 14px}
+#empty button{margin:0 4px;padding:6px 14px;font:inherit;border-radius:4px;border:1px solid #8aa6c7;background:#fff;cursor:pointer}
+#empty button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+body.drag #ws{outline:3px dashed var(--accent);outline-offset:-6px}
+.win{position:absolute;background:#fff;border:1px solid #a5afba;box-shadow:0 1px 3px rgba(0,0,0,.12);display:flex;flex-direction:column}
+.win.active{border-color:#4a7fc1;box-shadow:0 1px 6px rgba(43,108,176,.35)}
+.wt{height:20px;flex:none;display:flex;align-items:center;justify-content:center;background:#f0f2f5;border-bottom:1px solid #d5dbe2;cursor:move;position:relative;font-size:11.5px;padding:0 36px}
+.wtt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.wtt:hover{text-decoration:underline}
+.wx{position:absolute;right:3px;top:3px;width:13px;height:13px;border:1px solid #c33;background:#fff;color:#c33;font-size:11px;line-height:9px;padding:0;cursor:pointer}
+.wx:hover{background:#c33;color:#fff}
+.wb{flex:1;position:relative;min-height:0;overflow:hidden}
+.rs{position:absolute;right:0;bottom:0;width:12px;height:12px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 55%,#a5afba 55%,#a5afba 62%,transparent 62%,transparent 75%,#a5afba 75%,#a5afba 82%,transparent 82%)}
+.wb canvas{position:absolute;left:0;top:0}
+.axl{position:absolute;font-size:11.5px;color:#111;cursor:pointer;white-space:nowrap;padding:0 3px;border-radius:2px}
+.axl:hover{background:#e3ebf5;outline:1px solid #b8c8dc}
+.axl.static{cursor:default}.axl.static:hover{background:none;outline:none}
+.ax-x{transform:translateX(-50%)}
+.ax-y{writing-mode:vertical-rl;transform:translateY(-50%) rotate(180deg)}
+.tbl{overflow:auto;position:absolute;inset:0}
+.tbl .hd{padding:4px 6px;color:#3a4552;border-bottom:1px solid #e1e5ea;display:flex;gap:16px;align-items:center;white-space:nowrap}
+.tbl table{border-collapse:collapse;width:100%;font-size:11.5px}
+.tbl th{position:sticky;top:0;background:#f0f2f5;border:1px solid #d5dbe2;padding:2px 6px;font-weight:600;text-align:left;white-space:nowrap}
+.tbl td{border:1px solid #e6e9ed;padding:1px 6px;white-space:nowrap}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tr.sel td{background:#dbe8f7}
+.tbl tr:hover td{background:#f1f5fa}
+.cdot{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:5px;border:1px solid rgba(0,0,0,.35);cursor:pointer}
+.cdot.paint{box-shadow:0 0 0 2px #fff,0 0 0 3px currentColor}
+.tw{display:inline-block;width:12px;color:#888;cursor:pointer;text-align:center}
+#status{display:flex;align-items:center;gap:18px;padding:0 10px;background:var(--panel);border-top:1px solid var(--border);color:#46515e;white-space:nowrap;overflow:hidden}
+#status .msg{margin-left:auto;color:#1f5f9e}
+.menu{position:fixed;z-index:10000;background:#fff;border:1px solid #9aa5b1;box-shadow:2px 3px 10px rgba(0,0,0,.2);padding:3px 0;min-width:180px;max-height:80vh;overflow:auto}
+.mitem{display:grid;grid-template-columns:18px 1fr auto;padding:3px 10px 3px 4px;gap:4px;cursor:default;white-space:nowrap}
+.mitem:hover{background:#dde7f3}
+.mitem.dis{color:#a0a8b1;pointer-events:none}
+.mkey{color:#7b8591;padding-left:16px}
+.mchk{text-align:center}
+.msep{height:1px;background:#e1e5ea;margin:3px 0}
+.mhead{padding:3px 10px;color:#7b8591;font-size:11px}
+.ovl{position:fixed;inset:0;background:rgba(20,30,40,.25);z-index:20000;display:grid;place-items:center}
+.dlg{background:#fff;border:1px solid #8a96a3;box-shadow:0 8px 30px rgba(0,0,0,.25);min-width:320px;max-width:90vw;max-height:88vh;display:flex;flex-direction:column}
+.dlg .dt{padding:7px 12px;background:#f0f2f5;border-bottom:1px solid #d5dbe2;font-weight:600}
+.dlg .db{padding:12px;overflow:auto;user-select:text}
+.dlg .df{padding:8px 12px;border-top:1px solid #e1e5ea;display:flex;justify-content:flex-end;gap:6px}
+.dlg button{font:inherit;padding:4px 14px;border:1px solid #b8c2cc;background:#fff;border-radius:3px;cursor:pointer}
+.dlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.dlg input,.dlg select{font:inherit;padding:3px 5px;border:1px solid #b8c2cc;border-radius:3px}
+.frm{display:grid;grid-template-columns:auto 1fr;gap:7px 10px;align-items:center}
+.mtx{border-collapse:collapse;font-size:11px}
+.mtx th,.mtx td{border:1px solid #dde2e7;padding:1px 3px;text-align:center}
+.mtx th{background:#f0f2f5;font-weight:600}
+.mtx input{width:58px;text-align:right;border:none;padding:2px}
+.mtx td.diag{background:#f3f3f3;color:#888}
+.kw td{border-bottom:1px solid #eef0f3;padding:2px 8px 2px 0;vertical-align:top;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="menubar"></div>
+  <div id="toolbar"></div>
+  <div id="main">
+    <div id="side">
+      <div class="sect"><div class="sh">Sample</div><div id="info"></div></div>
+      <div class="sect">
+        <label style="display:flex;align-items:center;gap:6px">Events to display <span class="sp" style="flex:1"></span><input id="evDisp" list="evList" placeholder="All" style="width:84px;font:inherit;padding:2px 4px;border:1px solid #b8c2cc;border-radius:3px;text-align:right"></label>
+        <datalist id="evList"><option value="All"><option value="5,000"><option value="10,000"><option value="50,000"><option value="100,000"></datalist>
+      </div>
+      <div class="sect">
+        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="compChk"> Apply compensation <span class="sp" style="flex:1"></span><button class="sbtn" id="compBtn">Matrix…</button></label>
+      </div>
+      <div class="sect grow">
+        <div class="sh">Tubes <span class="sp"></span>
+          <button class="sbtn" id="tOpen" title="Open FCS files">Open…</button>
+          <button class="sbtn" id="tKw" title="Show FCS keywords">Keywords</button>
+        </div>
+        <div id="tubes"></div>
+      </div>
+    </div>
+    <div id="ws"><div id="wsInner"></div>
+      <div id="empty"><div class="card">
+        <h2>No samples loaded</h2>
+        <p>Drag .fcs / .lmd files here, or open them from the File menu.</p>
+        <button class="pri" id="eOpen">Open FCS files…</button><button id="eDemo">Load demo data</button>
+      </div></div>
+    </div>
+  </div>
+  <div id="status"><span id="stTube">—</span><span id="stXY"></span><span class="msg" id="stMsg"></span></div>
+</div>
+<input type="file" id="fileIn" accept=".fcs,.lmd,.FCS,.LMD" multiple hidden>
+<input type="file" id="expIn" accept=".json" hidden>
+<input type="color" id="colorIn" hidden>
+<script>
+'use strict';
+// ============================================================ utils
+const $ = (s, r = document) => r.querySelector(s);
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in attrs) {
+    const v = attrs[k];
+    if (k === 'style') e.style.cssText = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of kids) if (c != null) e.append(c);
+  return e;
+}
+let _uid = 0;
+const uid = p => p + Date.now().toString(36).slice(-5) + (_uid++).toString(36);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const trimZ = s => s.replace(/\.0+$|(\.\d*?)0+$/, '$1');
+function fmtNum(v) {
+  const a = Math.abs(v);
+  if (a >= 1e6) return trimZ((v / 1e6).toFixed(a >= 1e7 ? 0 : 1)) + 'M';
+  if (a >= 1e3) return trimZ((v / 1e3).toFixed(a >= 1e4 ? 0 : 1)) + 'K';
+  if (a === 0) return '0';
+  return trimZ(v.toFixed(a < 1 ? 3 : a < 10 ? 2 : a < 100 ? 1 : 0));
+}
+function fmtVal(v) {
+  if (!isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a >= 1e5) return v.toExponential(2);
+  return trimZ(v.toFixed(a < 10 ? 3 : a < 1000 ? 2 : 1));
+}
+const pct = (a, b) => b > 0 ? (a / b * 100).toFixed(2) + '%' : '—';
+function niceStep(x) {
+  const p = Math.pow(10, Math.floor(Math.log10(x))), r = x / p;
+  return (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * p;
+}
+function download(name, data, type = 'application/octet-stream') {
+  const blob = data instanceof Blob ? data : new Blob([data], { type });
+  const a = el('a', { href: URL.createObjectURL(blob), download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+let msgTimer;
+function msg(s) { const m = $('#stMsg'); m.textContent = s; clearTimeout(msgTimer); msgTimer = setTimeout(() => m.textContent = '', 5000); }
+
+// ============================================================ FCS reader
+function readAscii(u8, a, b) { let s = ''; for (let i = a; i < b && i < u8.length; i++) s += String.fromCharCode(u8[i]); return s; }
+function parseText(t) {
+  const d = t[0], kw = {}, tok = [];
+  let cur = '';
+  for (let i = 1; i < t.length; i++) {
+    const c = t[i];
+    if (c === d) {
+      if (t[i + 1] === d) { cur += d; i++; } else { tok.push(cur); cur = ''; }
+    } else cur += c;
+  }
+  if (cur.trim().length) tok.push(cur);
+  for (let i = 0; i + 1 < tok.length; i += 2) kw[tok[i].trim().toUpperCase()] = tok[i + 1];
+  return kw;
+}
+function parseDataset(buf, u8, off) {
+  const hdr = readAscii(u8, off, off + 58);
+  if (!/^FCS\d\.\d/.test(hdr)) throw new Error('Not an FCS file (header missing)');
+  const n = (a, b) => parseInt(hdr.slice(a, b).trim() || '0', 10) || 0;
+  const ts = n(10, 18), te = n(18, 26);
+  let ds = n(26, 34), de = n(34, 42);
+  const kw = parseText(new TextDecoder('utf-8').decode(u8.subarray(off + ts, off + te + 1)));
+  kw['FCSVERSION'] = hdr.slice(0, 6);
+  if (!ds || !de) { ds = parseInt(kw['$BEGINDATA'] || '0', 10); de = parseInt(kw['$ENDDATA'] || '0', 10); }
+  const npar = parseInt(kw['$PAR'], 10);
+  if (!(npar > 0)) throw new Error('$PAR missing');
+  let ntot = parseInt(kw['$TOT'] || '0', 10) || Infinity;
+  const dtype = (kw['$DATATYPE'] || 'F').trim().toUpperCase();
+  if ((kw['$MODE'] || 'L').trim().toUpperCase() !== 'L') throw new Error('Only list-mode ($MODE=L) data is supported');
+  const little = (kw['$BYTEORD'] || '1,2,3,4').trim().startsWith('1');
+  const params = [];
+  for (let p = 1; p <= npar; p++) {
+    params.push({
+      name: (kw[`$P${p}N`] || `P${p}`).trim(),
+      stain: (kw[`$P${p}S`] || '').trim(),
+      bits: parseInt(kw[`$P${p}B`] || '32', 10),
+      R: parseFloat(kw[`$P${p}R`] || '0') || 0,
+      E: (kw[`$P${p}E`] || '0,0').split(',').map(Number),
+      G: parseFloat(kw[`$P${p}G`] || '1') || 1,
+    });
+  }
+  const start = off + ds, end = Math.min(off + de + 1, u8.length), len = Math.max(0, end - start);
+  const dv = new DataView(buf, start, len);
+  const cols = [];
+  if (dtype === 'F' || dtype === 'D') {
+    const bw = dtype === 'F' ? 4 : 8;
+    ntot = Math.min(ntot, Math.floor(len / (bw * npar)));
+    for (let j = 0; j < npar; j++) cols.push(new Float32Array(ntot));
+    let o = 0;
+    if (dtype === 'F') { for (let i = 0; i < ntot; i++) for (let j = 0; j < npar; j++, o += 4) cols[j][i] = dv.getFloat32(o, little); }
+    else { for (let i = 0; i < ntot; i++) for (let j = 0; j < npar; j++, o += 8) cols[j][i] = dv.getFloat64(o, little); }
+  } else if (dtype === 'I') {
+    const bytes = params.map(p => p.bits / 8);
+    if (bytes.some(b => ![1, 2, 3, 4].includes(b))) throw new Error('Unsupported integer bit width');
+    const bpe = bytes.reduce((a, b) => a + b, 0);
+    ntot = Math.min(ntot, Math.floor(len / bpe));
+    const mods = params.map(p => { if (p.R > 0) { const rb = Math.ceil(Math.log2(p.R)); if (rb < p.bits) return Math.pow(2, rb); } return 0; });
+    for (let j = 0; j < npar; j++) cols.push(new Float32Array(ntot));
+    let o = 0;
+    for (let i = 0; i < ntot; i++) for (let j = 0; j < npar; j++) {
+      let v; const b = bytes[j];
+      if (b === 1) v = dv.getUint8(o);
+      else if (b === 2) v = dv.getUint16(o, little);
+      else if (b === 4) v = dv.getUint32(o, little);
+      else v = little ? dv.getUint8(o) | dv.getUint8(o + 1) << 8 | dv.getUint8(o + 2) << 16 : dv.getUint8(o) << 16 | dv.getUint8(o + 1) << 8 | dv.getUint8(o + 2);
+      o += b;
+      if (mods[j]) v = v % mods[j];
+      const p = params[j];
+      if (p.E[0] > 0) v = (p.E[1] || 1) * Math.pow(10, p.E[0] * v / (p.R || 1));
+      else if (p.G !== 1) v = v / p.G;
+      cols[j][i] = v;
+    }
+  } else throw new Error(`$DATATYPE=${dtype} is not supported`);
+  return { kw, params, cols, n: ntot, dtype };
+}
+function parseSpill(kw, params) {
+  const s = kw['$SPILLOVER'] || kw['SPILL'] || kw['SPILLOVER'] || kw['$COMP'];
+  if (!s) return null;
+  const a = s.split(',').map(x => x.trim());
+  const n = parseInt(a[0], 10);
+  if (!(n > 0) || a.length < 1 + n + n * n) return null;
+  let names = a.slice(1, 1 + n);
+  if (names.every(x => /^\d+$/.test(x))) names = names.map(x => params[+x - 1] ? params[+x - 1].name : x);
+  const v = a.slice(1 + n, 1 + n + n * n).map(Number), m = [];
+  for (let i = 0; i < n; i++) m.push(v.slice(i * n, i * n + n));
+  if (!names.every(nm => params.some(p => p.name === nm))) return null;
+  return { names, matrix: m };
+}
+function parseFCS(buf, fileName) {
+  const u8 = new Uint8Array(buf), sets = [];
+  let off = 0;
+  for (let k = 0; k < 10; k++) {
+    try { sets.push(parseDataset(buf, u8, off)); } catch (e) { if (!sets.length) throw e; break; }
+    const nx = parseInt(sets[sets.length - 1].kw['$NEXTDATA'] || '0', 10);
+    if (!nx || off + nx >= u8.length) break;
+    off += nx;
+  }
+  // Beckman .LMD files hold an FCS2 integer set and an FCS3 float set; prefer the float one
+  const ds = sets.find(s => s.dtype === 'F' || s.dtype === 'D') || sets[0];
+  const kw = ds.kw;
+  const base = fileName.replace(/\.[^.]+$/, '');
+  const params = ds.params.map(p => ({
+    name: p.name, stain: p.stain,
+    label: p.stain && p.stain !== p.name ? `${p.stain} ${p.name}` : p.name,
+    range: p.E[0] > 0 && ds.dtype === 'I' ? (p.E[1] || 1) * Math.pow(10, p.E[0]) : (p.R || 262144),
+  }));
+  const cols = {};
+  params.forEach((p, j) => cols[p.name] = ds.cols[j]);
+  return {
+    id: uid('t'), name: (kw['TUBE NAME'] || kw['TUBENAME'] || base).trim(), fileName, kw, params, cols, n: ds.n,
+    spill: parseSpill(kw, params), comp: null, gates: [],
+    sampleId: (kw['$SMNO'] || kw['SAMPLE ID'] || kw['$SRC'] || '').trim(),
+    date: (kw['$DATE'] || '').trim(),
+  };
+}
+
+// ============================================================ FCS writer
+function buildFCS(t, ids, popName) {
+  const P = t.params, np = P.length, n = ids.length, enc = new TextEncoder();
+  const k = [];
+  const add = (a, b) => k.push([a, String(b)]);
+  add('$BYTEORD', '1,2,3,4'); add('$DATATYPE', 'F'); add('$MODE', 'L'); add('$NEXTDATA', '0');
+  add('$PAR', np); add('$TOT', n);
+  P.forEach((p, i) => { const j = i + 1; add(`$P${j}N`, p.name); if (p.stain) add(`$P${j}S`, p.stain); add(`$P${j}B`, 32); add(`$P${j}E`, '0,0'); add(`$P${j}R`, Math.round(p.range)); });
+  for (const key of ['$CYT', '$CYTSN', '$DATE', '$BTIM', '$ETIM', '$SRC', '$SMNO', '$VOL', '$SPILLOVER', 'SPILL']) if (t.kw[key]) add(key, t.kw[key]);
+  add('$FIL', `${t.name}_${popName}.fcs`); add('TUBE NAME', `${t.name} ${popName}`); add('FLOWDESK POPULATION', popName);
+  const dataLen = n * np * 4, textStart = 256;
+  let begin = 0, tb;
+  for (let it = 0; it < 6; it++) {
+    const all = [['$BEGINANALYSIS', '0'], ['$ENDANALYSIS', '0'], ['$BEGINSTEXT', '0'], ['$ENDSTEXT', '0'], ['$BEGINDATA', String(begin)], ['$ENDDATA', String(begin + dataLen - 1)], ...k];
+    tb = enc.encode('/' + all.map(([a, b]) => a + '/' + b.replace(/\//g, '//')).join('/') + '/');
+    const nb = textStart + tb.length;
+    if (nb === begin) break;
+    begin = nb;
+  }
+  const pad = v => String(v).padStart(8, ' ');
+  const big = begin + dataLen - 1 > 99999999;
+  let hdr = 'FCS3.1    ' + pad(textStart) + pad(textStart + tb.length - 1) + pad(big ? 0 : begin) + pad(big ? 0 : begin + dataLen - 1) + pad(0) + pad(0);
+  hdr = hdr.padEnd(textStart, ' ');
+  const data = new Float32Array(n * np);
+  const C = P.map(p => t.cols[p.name]);
+  for (let e = 0, o = 0; e < n; e++) { const i = ids[e]; for (let j = 0; j < np; j++) data[o++] = C[j][i]; }
+  return new Blob([enc.encode(hdr), tb, data.buffer], { type: 'application/octet-stream' });
+}
+
+// ============================================================ compensation
+function invert(M) {
+  const n = M.length, A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+  for (let c = 0; c < n; c++) {
+    let p = c;
+    for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    if (Math.abs(A[p][c]) < 1e-12) throw new Error('Matrix is singular');
+    [A[c], A[p]] = [A[p], A[c]];
+    const d = A[c][c];
+    for (let j = 0; j < 2 * n; j++) A[c][j] /= d;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = A[r][c]; if (f) for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j]; }
+  }
+  return A.map(r => r.slice(n));
+}
+function computeComp(t) {
+  t.comp = null;
+  const s = t.spill;
+  if (!s) return;
+  let inv;
+  try { inv = invert(s.matrix); } catch (e) { msg(`${t.name}: ${e.message}`); return; }
+  const n = s.names.length, N = t.n, src = s.names.map(nm => t.cols[nm]);
+  if (src.some(c => !c)) return;
+  const out = s.names.map(() => new Float32Array(N)), tmp = new Float64Array(n);
+  for (let e = 0; e < N; e++) {
+    for (let i = 0; i < n; i++) tmp[i] = src[i][e];
+    for (let j = 0; j < n; j++) { let v = 0; for (let i = 0; i < n; i++) v += tmp[i] * inv[i][j]; out[j][e] = v; }
+  }
+  t.comp = {};
+  s.names.forEach((nm, j) => t.comp[nm] = out[j]);
+}
+
+// ============================================================ scales
+const SCALES = { lin: 'Linear', log: 'Logarithmic', biex: 'Biexponential' };
+function axisFns(ax) {
+  const lo = ax.min, hi = ax.max;
+  let f, fu, inv;
+  if (ax.scale === 'log') {
+    const m = lo > 0 ? lo : 1e-3;
+    f = v => Math.log10(v < m ? m : v > hi ? hi : v);
+    fu = v => Math.log10(v > 1e-12 ? v : 1e-12);
+    inv = u => Math.pow(10, u);
+  } else if (ax.scale === 'biex') {
+    const c = ax.cof || 150;
+    f = v => Math.asinh((v < lo ? lo : v > hi ? hi : v) / c) / Math.LN10;
+    fu = v => Math.asinh(v / c) / Math.LN10;
+    inv = u => c * Math.sinh(u * Math.LN10);
+  } else {
+    f = v => v < lo ? lo : v > hi ? hi : v;
+    fu = v => v;
+    inv = u => u;
+  }
+  const t0 = fu(ax.scale === 'log' ? (lo > 0 ? lo : 1e-3) : lo), t1 = fu(hi);
+  return { f, fu, inv, t0, t1, ax };
+}
+const axCopy = a => ({ scale: a.scale, min: a.min, max: a.max, cof: a.cof || 150 });
+const sameAx = (a, b) => a.scale === b.scale && a.min === b.min && a.max === b.max && (a.scale !== 'biex' || a.cof === b.cof);
+// CytExpert-style linear axes: ticks like 0, 200, 400 with a "(x10^n)" multiplier at the axis end
+function linExp(ax) {
+  const top = Math.max(Math.abs(ax.min), Math.abs(ax.max));
+  return top < 1e4 ? 0 : Math.floor(Math.log10(top)) - 2;
+}
+function ticksFor(ax) {
+  const T = [], { min, max } = ax;
+  if (ax.scale === 'lin') {
+    const st = niceStep((max - min) / 5), ms = st / 5;
+    const m = Math.pow(10, linExp(ax));
+    for (let v = Math.ceil(min / st) * st; v <= max + st * 1e-6; v += st) T.push({ v, major: true, label: trimZ((Math.abs(v) < st * 1e-6 ? 0 : v / m).toFixed(Math.max(0, -Math.floor(Math.log10(st / m))))) });
+    for (let v = Math.ceil(min / ms) * ms; v <= max; v += ms) T.push({ v, major: false });
+  } else {
+    const top = Math.ceil(Math.log10(Math.max(Math.abs(max), Math.abs(min), 10)));
+    const dec = (s, k) => { const b = Math.pow(10, k); T.push({ v: s * b, major: true, exp: k, neg: s < 0 }); for (let m = 2; m < 10; m++) T.push({ v: s * m * b, major: false }); };
+    if (ax.scale === 'log') { for (let k = Math.floor(Math.log10(Math.max(min, 1e-9))); k <= top; k++) dec(1, k); }
+    else { T.push({ v: 0, major: true, label: '0' }); for (let k = 0; k <= top; k++) { dec(1, k); dec(-1, k); } }
+  }
+  return T.filter(o => o.v >= min - Math.abs(min) * 1e-9 - 1e-9 && o.v <= max * (1 + 1e-9) + 1e-9);
+}
+const isScatter = name => /^(FSC|SSC|TIME|WIDTH)|(-W|-WIDTH)$/i.test(name) || /^time$/i.test(name);
+function quantiles(arr, qs) {
+  const n = arr.length;
+  if (!n) return qs.map(() => 0);
+  const step = Math.max(1, Math.floor(n / 50000)), s = [];
+  for (let i = 0; i < n; i += step) s.push(arr[i]);
+  s.sort((a, b) => a - b);
+  return qs.map(q => s[Math.min(s.length - 1, Math.floor(q * s.length))]);
+}
+function defaultAxis(name, auto) {
+  const t = activeTube(), pr = t && t.params.find(p => p.name === name);
+  const range = pr ? pr.range : 262144, col = t && getCol(t, name);
+  if (isScatter(name)) {
+    let max = range;
+    if (col) { const [q] = quantiles(col, [0.999]); if (q > 0 && (auto || q < range * 0.5)) max = Math.min(range * 1.05, q * 1.15); }
+    return { scale: 'lin', min: 0, max: Math.max(1, +max.toPrecision(2)), cof: 150, auto: true };
+  }
+  if (auto && col) {
+    const [q0, q1] = quantiles(col, [0.005, 0.9995]);
+    return { scale: 'biex', min: Math.min(-10, q0 * 1.3), max: Math.max(q1 * 1.5, 100), cof: Math.max(50, Math.abs(Math.min(0, q0)) * 0.5), auto: true };
+  }
+  return { scale: 'log', min: Math.pow(10, Math.floor(Math.log10(range)) - 4), max: range, cof: 150, auto: true };
+}
+
+// ============================================================ state
+// Gates belong to each tube; S.gates always means "the active tube's gates".
+// Without a tube loaded they live in S.looseGates (e.g. an opened template).
+const S = { tubes: [], active: null, looseGates: [], template: null, plots: [], panels: [], compOn: true, maxEv: 0, tool: 'pointer', sel: null, activeWin: null };
+Object.defineProperty(S, 'gates', {
+  get() { const t = activeTube(); return t ? t.gates : S.looseGates; },
+  set(v) { const t = activeTube(); if (t) t.gates = v; else S.looseGates = v; },
+});
+const DOT = '#6a1b7a';
+const GCOLORS = ['#e0242a', '#2ca02c', '#1f77b4', '#ff7f0e', '#9467bd', '#17becf', '#e377c2', '#8c564b', '#bcbd22', '#d81b60'];
+const QK = ['UL', 'UR', 'LL', 'LR'];
+const activeTube = () => S.tubes.find(t => t.id === S.active) || null;
+const getCol = (t, name) => (S.compOn && t.comp && t.comp[name]) || t.cols[name];
+const getItem = id => S.plots.find(p => p.id === id) || S.panels.find(p => p.id === id);
+const paramLabel = name => { const t = activeTube(); const p = t && t.params.find(q => q.name === name); return p ? p.label : name; };
+const shortName = name => { const t = activeTube(); const p = t && t.params.find(q => q.name === name); return (p && p.stain) || name.replace(/-A$/, ''); };
+const popIdsOf = g => g.type === 'quad' ? QK.map(q => g.id + ':' + q) : [g.id];
+
+let POPS = [], POPMAP = {}, RES = null, VERSION = 0;
+function buildPops(gates) {
+  const kids = {}, pops = [], map = {};
+  const all = { id: 'all', name: 'All Events', parentId: null, color: '#222', gate: null, depth: 0 };
+  for (const g of gates) {
+    if (g.type === 'quad') QK.forEach(q => (kids[g.parentId] = kids[g.parentId] || []).push({ id: g.id + ':' + q, name: g.qnames[q], parentId: g.parentId, color: g.qcolors[q], paint: !!(g.qpaint && g.qpaint[q]), gate: g, quad: q }));
+    else (kids[g.parentId] = kids[g.parentId] || []).push({ id: g.id, name: g.name, parentId: g.parentId, color: g.color, paint: !!g.paint, gate: g });
+  }
+  const walk = (p, d) => { p.depth = d; pops.push(p); map[p.id] = p; (kids[p.id] || []).forEach(c => walk(c, d + 1)); };
+  walk(all, 0);
+  return { pops, map };
+}
+function rebuildPops() {
+  ({ pops: POPS, map: POPMAP } = buildPops(S.gates));
+  // drop orphaned gates
+  const live = new Set(POPS.map(p => p.gate && p.gate.id).filter(Boolean));
+  if (S.gates.some(g => !live.has(g.id))) S.gates = S.gates.filter(g => live.has(g.id));
+}
+// name of a population that may only exist in another tube (for plot titles)
+function resolvePop(id) {
+  for (let guard = 0; guard < 50 && id !== 'all' && !RES.idx[id]; guard++) {
+    let parent = 'all';
+    for (const t of S.tubes) { const g = t.gates.find(x => popIdsOf(x).includes(id)); if (g) { parent = g.parentId; break; } }
+    id = parent;
+  }
+  return RES.idx[id] ? id : 'all';
+}
+function popName(id) {
+  if (POPMAP[id]) return POPMAP[id].name;
+  for (const t of S.tubes) { const p = buildPops(t.gates).map[id]; if (p) return p.name; }
+  return '?';
+}
+function pip(px, py, P) {
+  let c = false;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const [xi, yi] = P[i], [xj, yj] = P[j];
+    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+function applyGate(t, g, par) {
+  const X = getCol(t, g.x), Y = g.y ? getCol(t, g.y) : null;
+  if (!X || (g.y && !Y)) return g.type === 'quad' ? QK.map(() => new Uint32Array(0)) : new Uint32Array(0);
+  const xa = axisFns(g.xAx), ya = g.yAx ? axisFns(g.yAx) : null, n = par.length;
+  if (g.type === 'quad') {
+    const cx = xa.fu(g.pts[0][0]), cy = ya.fu(g.pts[0][1]);
+    const o = QK.map(() => new Uint32Array(n)), c = [0, 0, 0, 0];
+    for (let k = 0; k < n; k++) {
+      const i = par[k], r = xa.f(X[i]) >= cx, u = ya.f(Y[i]) >= cy;
+      const q = u ? (r ? 1 : 0) : (r ? 3 : 2);
+      o[q][c[q]++] = i;
+    }
+    return o.map((a, q) => a.slice(0, c[q]));
+  }
+  const out = new Uint32Array(n);
+  let m = 0;
+  if (g.type === 'interval') {
+    const a = xa.fu(Math.min(g.pts[0][0], g.pts[1][0])), b = xa.fu(Math.max(g.pts[0][0], g.pts[1][0]));
+    for (let k = 0; k < n; k++) { const i = par[k], u = xa.f(X[i]); if (u >= a && u <= b) out[m++] = i; }
+  } else {
+    const P = g.pts.map(([a, b]) => [xa.fu(a), ya.fu(b)]);
+    const x0 = Math.min(...P.map(p => p[0])), x1 = Math.max(...P.map(p => p[0]));
+    const y0 = Math.min(...P.map(p => p[1])), y1 = Math.max(...P.map(p => p[1]));
+    if (g.type === 'rect') {
+      for (let k = 0; k < n; k++) { const i = par[k], u = xa.f(X[i]), v = ya.f(Y[i]); if (u >= x0 && u <= x1 && v >= y0 && v <= y1) out[m++] = i; }
+    } else if (g.type === 'ellipse') {
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rx = (x1 - x0) / 2 || 1e-9, ry = (y1 - y0) / 2 || 1e-9;
+      for (let k = 0; k < n; k++) { const i = par[k], u = (xa.f(X[i]) - cx) / rx, v = (ya.f(Y[i]) - cy) / ry; if (u * u + v * v <= 1) out[m++] = i; }
+    } else {
+      for (let k = 0; k < n; k++) { const i = par[k], u = xa.f(X[i]), v = ya.f(Y[i]); if (u >= x0 && u <= x1 && v >= y0 && v <= y1 && pip(u, v, P)) out[m++] = i; }
+    }
+  }
+  return out.slice(0, m);
+}
+function computeTube(t, pops = POPS) {
+  const idx = {}, all = new Uint32Array(t.n);
+  for (let i = 0; i < t.n; i++) all[i] = i;
+  idx.all = all;
+  for (const p of pops) {
+    if (p.id === 'all' || idx[p.id]) continue;
+    const par = idx[p.parentId] || new Uint32Array(0), g = p.gate;
+    if (g.type === 'quad') { const r = applyGate(t, g, par); QK.forEach((q, k) => idx[g.id + ':' + q] = r[k]); }
+    else idx[p.id] = applyGate(t, g, par);
+  }
+  return idx;
+}
+function hexRGB(h) { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
+function computeColors(t, idx) {
+  const c = new Uint8Array(t.n), pal = [DOT];
+  for (const p of POPS) if (p.paint && idx[p.id]) { pal.push(p.color); const k = pal.length - 1; for (const i of idx[p.id]) c[i] = k; }
+  return { c, pal32: new Uint32Array(pal.map(h => { const [r, g, b] = hexRGB(h); return (255 << 24 | b << 16 | g << 8 | r) >>> 0; })) };
+}
+function recalc() {
+  rebuildPops();
+  VERSION++; STATC.clear();
+  const t = activeTube();
+  RES = t ? { idx: computeTube(t) } : null;
+  if (RES) RES.colors = computeColors(t, RES.idx);
+  renderAll();
+}
+let rcq = false;
+function scheduleRecalc() { if (rcq) return; rcq = true; requestAnimationFrame(() => { rcq = false; recalc(); }); }
+const popCount = id => RES && RES.idx[id] ? RES.idx[id].length : 0;
+
+// statistics
+const STATC = new Map();
+const STATS = { mean: 'Mean', median: 'Median', geomean: 'Geo Mean', sd: 'SD', cv: 'CV%', rsd: 'rSD', min: 'Min', max: 'Max' };
+function popStat(t, ids, stat, param) {
+  const key = `${t.id}|${ids.length}|${stat}|${param}|${S.compOn}`, popKey = key + '|' + (ids[0] || 0) + '|' + (ids[ids.length - 1] || 0);
+  if (STATC.has(popKey)) return STATC.get(popKey);
+  const X = getCol(t, param);
+  let r = NaN;
+  if (X && ids.length) {
+    const n = ids.length;
+    if (stat === 'median' || stat === 'rsd') {
+      const v = new Float32Array(n); for (let k = 0; k < n; k++) v[k] = X[ids[k]]; v.sort();
+      const med = n % 2 ? v[n >> 1] : (v[n / 2 - 1] + v[n / 2]) / 2;
+      if (stat === 'median') r = med; else { const q = a => v[Math.min(n - 1, Math.floor(a * n))]; r = (q(0.8413) - q(0.1587)) / 2; }
+    } else if (stat === 'geomean') { let s = 0, c = 0; for (let k = 0; k < n; k++) { const x = X[ids[k]]; if (x > 0) { s += Math.log(x); c++; } } r = c ? Math.exp(s / c) : NaN; }
+    else if (stat === 'min' || stat === 'max') { let a = Infinity, b = -Infinity; for (let k = 0; k < n; k++) { const x = X[ids[k]]; if (x < a) a = x; if (x > b) b = x; } r = stat === 'min' ? a : b; }
+    else {
+      let s = 0; for (let k = 0; k < n; k++) s += X[ids[k]];
+      const mean = s / n;
+      if (stat === 'mean') r = mean;
+      else { let q = 0; for (let k = 0; k < n; k++) { const d = X[ids[k]] - mean; q += d * d; } const sd = Math.sqrt(q / Math.max(1, n - 1)); r = stat === 'sd' ? sd : sd / mean * 100; }
+    }
+  }
+  STATC.set(popKey, r);
+  return r;
+}
+
+// ============================================================ undo / templates
+// snapshots hold every tube's gates, so undo also covers "apply to tubes"
+const UNDO = [], REDO = [];
+const snap = () => JSON.stringify({ active: S.active, loose: S.looseGates, tubeGates: Object.fromEntries(S.tubes.map(t => [t.id, t.gates])), plots: S.plots, panels: S.panels });
+function pushUndo() { UNDO.push(snap()); if (UNDO.length > 150) UNDO.shift(); REDO.length = 0; }
+function restore(s) {
+  const o = JSON.parse(s);
+  S.looseGates = o.loose;
+  for (const t of S.tubes) if (o.tubeGates[t.id]) t.gates = o.tubeGates[t.id];
+  if (S.tubes.some(t => t.id === o.active)) S.active = o.active;
+  S.plots = o.plots; S.panels = o.panels; S.sel = null;
+  rebuildWindows(); recalc();
+}
+function undo() { if (!UNDO.length) return msg('Nothing to undo'); REDO.push(snap()); restore(UNDO.pop()); }
+function redo() { if (!REDO.length) return msg('Nothing to redo'); UNDO.push(snap()); restore(REDO.pop()); }
+function experimentJSON() { return JSON.stringify({ app: 'FlowDesk', version: 1, gates: S.gates, plots: S.plots, panels: S.panels, compOn: S.compOn }, null, 1); }
+// a template's gates are copied into every loaded tube and into tubes opened afterwards
+function loadExperiment(o) {
+  if (!o || !Array.isArray(o.gates) || !Array.isArray(o.plots)) throw new Error('Not a FlowDesk experiment file');
+  pushUndo();
+  S.template = o.gates;
+  S.looseGates = clone(o.gates);
+  for (const t of S.tubes) t.gates = clone(o.gates);
+  S.plots = o.plots; S.panels = o.panels || []; if ('compOn' in o) S.compOn = o.compOn;
+  $('#compChk').checked = S.compOn;
+  rebuildWindows(); recalc();
+}
+function newTubeGates() { return S.template ? clone(S.template) : []; }
+function gateSubtree(gates, g) {
+  const out = [g];
+  for (const c of gates) if (popIdsOf(g).includes(c.parentId)) out.push(...gateSubtree(gates, c));
+  return out;
+}
+// copy gates (with missing ancestors) from the active tube into other tubes; same id = same population
+function applyGatesToTubes(rootIds, tubeIds, withChildren) {
+  const src = S.gates, cur = activeTube();
+  const roots = rootIds ? src.filter(g => rootIds.includes(g.id)) : src.filter(g => g.parentId === 'all');
+  const copy = [];
+  for (const r of roots) {
+    const chain = [];
+    for (let pid = r.parentId; pid !== 'all';) { const a = src.find(x => popIdsOf(x).includes(pid)); if (!a) break; chain.unshift(a); pid = a.parentId; }
+    copy.push(...chain.map(g => ({ g, keep: true })), ...(withChildren || !rootIds ? gateSubtree(src, r) : [r]).map(g => ({ g, keep: false })));
+  }
+  const targets = S.tubes.filter(t => t !== cur && tubeIds.includes(t.id));
+  if (!targets.length) return;
+  pushUndo();
+  for (const t of targets) for (const { g, keep } of copy) {
+    const i = t.gates.findIndex(x => x.id === g.id);
+    if (i < 0) t.gates.push(clone(g)); else if (!keep) t.gates[i] = clone(g);
+  }
+  msg(`Applied to ${targets.length} tube(s)`);
+  recalc();
+}
+function applyDialog(rootIds) {
+  const cur = activeTube(), others = S.tubes.filter(t => t !== cur);
+  if (!others.length) return msg('No other tubes loaded');
+  const boxes = others.map(t => ({ t, cb: el('input', { type: 'checkbox' }) }));
+  const all = el('input', { type: 'checkbox' });
+  all.onchange = () => boxes.forEach(b => b.cb.checked = all.checked);
+  const kids = el('input', { type: 'checkbox' }); kids.checked = true;
+  const list = el('div', { style: 'max-height:45vh;overflow:auto;border:1px solid #dde2e7;padding:6px 8px;margin:8px 0;min-width:300px' },
+    ...boxes.map(({ t, cb }) => el('label', { style: 'display:flex;gap:6px;padding:2px 0' }, cb, t.name, el('span', { style: 'color:#8a95a1' }, t.sampleId ? ` (${t.sampleId})` : ''))));
+  const rg = rootIds && S.gates.find(g => g.id === rootIds[0]);
+  const what = !rg ? 'all gates' : rg.type === 'quad' ? 'quadrant gate' : `“${rg.name}”`;
+  dialog(`Apply ${what} to tubes`, el('div', {}, el('label', { style: 'display:flex;gap:6px' }, all, el('b', {}, 'Select all')), list,
+    rootIds ? el('label', { style: 'display:flex;gap:6px' }, kids, 'Include child gates') : null),
+    [{ label: 'Cancel' }, { label: 'Apply', primary: true, action: () => applyGatesToTubes(rootIds, boxes.filter(b => b.cb.checked).map(b => b.t.id), kids.checked) }]);
+}
+
+// ============================================================ windows
+const WIN = {};
+let zTop = 10;
+const SNAP = 5;
+function makeWin(id, box) {
+  const e = el('div', { class: 'win' });
+  const tt = el('span', { class: 'wtt' });
+  const xb = el('button', { class: 'wx', title: 'Close' }, '×');
+  const tb = el('div', { class: 'wt' }, tt, xb);
+  const body = el('div', { class: 'wb' });
+  const rs = el('div', { class: 'rs' });
+  e.append(tb, body, rs);
+  $('#wsInner').append(e);
+  const w = { id, el: e, title: tt, body, moved: false };
+  const place = b => { e.style.left = b.x + 'px'; e.style.top = b.y + 'px'; e.style.width = b.w + 'px'; e.style.height = b.h + 'px'; };
+  w.place = place; place(box);
+  e.addEventListener('pointerdown', () => { e.style.zIndex = ++zTop; setActiveWin(id); }, true);
+  const dragger = (handle, resize) => handle.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0 || ev.target === xb) return;
+    ev.preventDefault();
+    const it = getItem(id), b0 = { ...it.win }, sx = ev.clientX, sy = ev.clientY;
+    w.moved = false;
+    const mv = m => {
+      const dx = m.clientX - sx, dy = m.clientY - sy;
+      if (Math.abs(dx) + Math.abs(dy) > 3) w.moved = true;
+      const snap = v => Math.round(v / SNAP) * SNAP;
+      it.win = resize ? { ...b0, w: Math.max(180, snap(b0.w + dx)), h: Math.max(140, snap(b0.h + dy)) } : { ...b0, x: Math.max(0, snap(b0.x + dx)), y: Math.max(0, snap(b0.y + dy)) };
+      place(it.win);
+    };
+    const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); fitWorkspace(); };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up);
+  });
+  dragger(tb, false); dragger(rs, true);
+  xb.onclick = () => closeWin(id);
+  new ResizeObserver(() => w.render && w.render()).observe(body);
+  WIN[id] = w;
+  return w;
+}
+function setActiveWin(id) {
+  S.activeWin = id;
+  for (const k in WIN) WIN[k].el.classList.toggle('active', k === id);
+}
+function closeWin(id) {
+  pushUndo();
+  S.plots = S.plots.filter(p => p.id !== id);
+  S.panels = S.panels.filter(p => p.id !== id);
+  if (WIN[id]) { WIN[id].el.remove(); delete WIN[id]; }
+  fitWorkspace();
+}
+function rebuildWindows() {
+  for (const k in WIN) { WIN[k].el.remove(); delete WIN[k]; }
+  for (const p of S.plots) createPlotWin(p);
+  for (const p of S.panels) createPanelWin(p);
+  fitWorkspace();
+}
+function fitWorkspace() {
+  let r = 0, b = 0;
+  for (const it of [...S.plots, ...S.panels]) { r = Math.max(r, it.win.x + it.win.w); b = Math.max(b, it.win.y + it.win.h); }
+  const inner = $('#wsInner');
+  inner.style.width = (r + 40) + 'px'; inner.style.height = (b + 40) + 'px';
+  $('#empty').style.display = S.tubes.length ? 'none' : '';
+}
+const CELL_W = 290, CELL_H = 285, GAP = 8;
+function freeSpot(w, h) {
+  const ws = $('#ws'), maxX = Math.max(ws.clientWidth - w - GAP, 0);
+  const items = [...S.plots, ...S.panels].map(i => i.win);
+  for (let y = GAP; y < 20000; y += 15) for (let x = GAP; x <= maxX; x += 15) {
+    if (!items.some(b => x < b.x + b.w + GAP && x + w + GAP > b.x && y < b.y + b.h + GAP && y + h + GAP > b.y)) return { x, y, w, h };
+  }
+  return { x: GAP, y: GAP, w, h };
+}
+function tileWindows() {
+  const ws = $('#ws'), avail = Math.max(ws.clientWidth - GAP, CELL_W + GAP);
+  const items = [...S.plots, ...S.panels].sort((a, b) => (a.win.y - b.win.y) || (a.win.x - b.win.x));
+  let x = GAP, y = GAP, rowH = 0;
+  for (const it of items) {
+    const w = it.kind ? 2 * CELL_W + GAP : CELL_W, h = CELL_H;
+    if (x + w > avail && x > GAP) { x = GAP; y += rowH + GAP; rowH = 0; }
+    it.win = { x, y, w, h };
+    if (WIN[it.id]) WIN[it.id].place(it.win);
+    x += w + GAP; rowH = Math.max(rowH, h);
+  }
+  fitWorkspace();
+}
+let rq = false;
+function renderAll() {
+  if (rq) return;
+  rq = true;
+  requestAnimationFrame(() => { rq = false; for (const k in WIN) WIN[k].render(); renderSide(); });
+}
+
+// ============================================================ plots
+function addPlot(type, pop = 'all', xp, yp, box) {
+  const t = activeTube();
+  const names = t ? t.params.map(p => p.name) : [];
+  xp = xp || names.find(n => /^FSC-A$/i.test(n)) || names[0] || 'FSC-A';
+  yp = yp || names.find(n => /^SSC-A$/i.test(n)) || names.find(n => n !== xp) || 'SSC-A';
+  const p = { id: uid('p'), type, pop, x: { param: xp, ...defaultAxis(xp) }, y: { param: yp, ...defaultAxis(yp) }, dot: 1, win: box || freeSpot(CELL_W, CELL_H) };
+  pushUndo();
+  S.plots.push(p);
+  const w = createPlotWin(p);
+  fitWorkspace(); setActiveWin(p.id); w.el.style.zIndex = ++zTop;
+  renderAll();
+  w.el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  return p;
+}
+// toolbar buttons open the panel once; pressing again hides it
+function togglePanel(kind) {
+  const open = S.panels.filter(p => p.kind === kind);
+  if (!open.length) return addPanel(kind);
+  pushUndo();
+  S.panels = S.panels.filter(p => p.kind !== kind);
+  for (const p of open) if (WIN[p.id]) { WIN[p.id].el.remove(); delete WIN[p.id]; }
+  fitWorkspace(); renderAll();
+}
+const IS_MAC = /Mac/i.test(navigator.platform);
+const keyLabel = s => IS_MAC ? s.replace(/Ctrl\+/g, '⌘') : s;
+function addPanel(kind) {
+  const p = { id: uid('w'), kind, cols: [], collapsed: [], win: freeSpot(2 * CELL_W + GAP, CELL_H) };
+  pushUndo();
+  S.panels.push(p);
+  createPanelWin(p);
+  fitWorkspace(); renderAll();
+}
+const getPlot = id => S.plots.find(p => p.id === id);
+const MARG = { L: 54, R: 10, T: 8, B: 36 };
+function createPlotWin(p) {
+  const w = makeWin(p.id, p.win);
+  w.kind = 'plot';
+  w.cv = el('canvas');
+  w.xl = el('div', { class: 'axl ax-x' });
+  w.yl = el('div', { class: 'axl ax-y' });
+  w.body.append(w.cv, w.xl, w.yl);
+  w.title.addEventListener('click', e => { if (w.moved) return; popMenu(e, p.id); });
+  w.xl.onclick = e => paramMenu(e, w.id, 'x');
+  w.yl.onclick = e => { const q = getPlot(w.id); if (q.type !== 'hist') paramMenu(e, w.id, 'y'); };
+  attachPlotEvents(w);
+  w.render = () => drawPlot(w);
+  return w;
+}
+const LUT = (() => {
+  const L = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const t = 0.08 + 0.92 * i / 255;
+    const c = x => Math.round(clamp(1.5 - Math.abs(x), 0, 1) * 255);
+    L[i] = (255 << 24 | c(4 * t - 1) << 16 | c(4 * t - 2) << 8 | c(4 * t - 3)) >>> 0;
+  }
+  return L;
+})();
+// display-only subsample (gating and statistics always use every event)
+const evLimit = p => p.maxEv ?? S.maxEv;
+function displayIds(p, ids) {
+  const lim = evLimit(p);
+  if (!lim || ids.length <= lim) return ids;
+  const out = new Uint32Array(lim), step = ids.length / lim;
+  for (let k = 0; k < lim; k++) out[k] = ids[Math.floor(k * step)];
+  return out;
+}
+function plotGeom(w, p) {
+  const cw = w.body.clientWidth, ch = w.body.clientHeight;
+  const G = { cw, ch, L: MARG.L, T: MARG.T, W: Math.max(10, cw - MARG.L - MARG.R), H: Math.max(10, ch - MARG.T - MARG.B) };
+  G.xa = axisFns(p.x);
+  return G;
+}
+const u2dx = (G, u) => G.L + (u - G.xa.t0) / (G.xa.t1 - G.xa.t0) * G.W;
+const u2dy = (G, u) => G.T + G.H - (u - G.ya.t0) / (G.ya.t1 - G.ya.t0) * G.H;
+const d2rx = (G, d) => G.xa.inv(G.xa.t0 + (d - G.L) / G.W * (G.xa.t1 - G.xa.t0));
+const d2ry = (G, d) => G.ya.inv(G.ya.t0 + (G.T + G.H - d) / G.H * (G.ya.t1 - G.ya.t0));
+const r2dx = (G, v) => u2dx(G, G.xa.fu(v));
+const r2dy = (G, v) => u2dy(G, G.ya.fu(v));
+
+function drawPlot(w) {
+  const p = getPlot(w.id);
+  if (!p) return;
+  const t = activeTube();
+  const pop = POPMAP[p.pop];
+  w.title.textContent = `${t ? t.name : '—'} : ${popName(p.pop)}`;
+  const dpr = window.devicePixelRatio || 1, G = plotGeom(w, p);
+  const { cw, ch, L, T, W, H } = G;
+  if (cw < 20 || ch < 20) return;
+  const cv = w.cv;
+  if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) {
+    cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+    cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+  }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+  // a population not gated in this tube falls back to its closest ancestor that is
+  const popId = RES ? resolvePop(p.pop) : p.pop;
+  const ids = RES && RES.idx[popId], shown = ids && displayIds(p, ids);
+  const X = t && getCol(t, p.x.param);
+  const iw = Math.round(W * dpr), ih = Math.round(H * dpr), ox = Math.round(L * dpr), oy = Math.round(T * dpr);
+  const xa = G.xa, sx = iw / (xa.t1 - xa.t0);
+  if (p.type === 'hist') {
+    const nb = clamp(Math.floor(W / 2), 32, 256), cnt = new Float64Array(nb);
+    if (shown && X) for (let k = 0; k < shown.length; k++) { const b = Math.floor((xa.f(X[shown[k]]) - xa.t0) / (xa.t1 - xa.t0) * nb); cnt[b < 0 ? 0 : b >= nb ? nb - 1 : b]++; }
+    // scale to the interior bins so off-scale pile-ups at the edges don't flatten the histogram
+    let mx = 0; for (let b = 1; b < nb - 1; b++) mx = Math.max(mx, cnt[b]);
+    if (!mx) mx = Math.max(cnt[0], cnt[nb - 1]);
+    for (let b = 0; b < nb; b++) cnt[b] = Math.min(cnt[b], mx * 1.15);
+    const ymax = Math.max(10, niceStep(mx * 1.15 / 4) * Math.ceil(mx * 1.15 / niceStep(mx * 1.15 / 4)));
+    G.ya = axisFns({ scale: 'lin', min: 0, max: ymax });
+    ctx.save(); ctx.scale(dpr, dpr);
+    ctx.beginPath(); ctx.moveTo(L, T + H);
+    for (let b = 0; b < nb; b++) { const y = T + H - cnt[b] / ymax * H; ctx.lineTo(L + b / nb * W, y); ctx.lineTo(L + (b + 1) / nb * W, y); }
+    ctx.lineTo(L + W, T + H); ctx.closePath();
+    ctx.fillStyle = 'rgba(106,27,122,.75)'; ctx.fill(); ctx.strokeStyle = '#4a0f57'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+  } else {
+    G.ya = axisFns(p.y);
+    const Y = t && getCol(t, p.y.param), ya = G.ya, sy = ih / (ya.t1 - ya.t0);
+    if (shown && X && Y && shown.length) {
+      const img = ctx.createImageData(iw, ih), d32 = new Uint32Array(img.data.buffer);
+      d32.fill(0xFFFFFFFF);
+      // every plot type uses the same marker size: dot size × device pixel ratio
+      const ds = Math.max(1, Math.round((p.dot || 1) * dpr)), n = shown.length;
+      const PX = new Int32Array(n), PY = new Int32Array(n);
+      for (let k = 0; k < n; k++) {
+        const i = shown[k];
+        PX[k] = clamp(((xa.f(X[i]) - xa.t0) * sx) | 0, 0, iw - ds);
+        PY[k] = clamp(ih - ds - (((ya.f(Y[i]) - ya.t0) * sy) | 0), 0, ih - ds);
+      }
+      const put = (k, col) => { const px = PX[k], py = PY[k]; if (ds === 1) d32[py * iw + px] = col; else for (let dy = 0; dy < ds; dy++) d32.fill(col, (py + dy) * iw + px, (py + dy) * iw + px + ds); };
+      let contour = null;
+      if (p.type === 'density') {
+        // binned density: one bin per marker
+        const gw = Math.ceil(iw / ds), gh = Math.ceil(ih / ds), grid = new Float32Array(gw * gh);
+        for (let k = 0; k < n; k++) grid[((PY[k] / ds) | 0) * gw + ((PX[k] / ds) | 0)]++;
+        let mx = 0; for (const v of grid) if (v > mx) mx = v;
+        const lm = Math.log(mx + 1);
+        for (let gy = 0; gy < gh; gy++) for (let gx = 0; gx < gw; gx++) {
+          const v = grid[gy * gw + gx];
+          if (!v) continue;
+          const col = LUT[Math.min(255, Math.floor(Math.log(v + 1) / lm * 255))];
+          for (let yy = gy * ds, ye = Math.min(ih, yy + ds); yy < ye; yy++) d32.fill(col, yy * iw + gx * ds, yy * iw + Math.min(iw, gx * ds + ds));
+        }
+      } else if (p.type === 'pseudo' || p.type === 'contour') {
+        const cs = Math.max(2, Math.round(3 * dpr)), D = smoothGrid(PX, PY, n, iw, ih, cs, p.type === 'contour' ? 3 : 2);
+        const at = k => D.g[Math.min(D.gh - 1, ((PY[k] + ds / 2) / cs) | 0) * D.gw + Math.min(D.gw - 1, ((PX[k] + ds / 2) / cs) | 0)];
+        if (p.type === 'pseudo') {
+          // colour each event by local density; draw dense events last so they stay on top
+          const lm = Math.log(D.max + 1), lvl = new Uint8Array(n), cnt = new Uint32Array(257);
+          for (let k = 0; k < n; k++) { lvl[k] = Math.min(255, Math.floor(Math.log(at(k) + 1) / lm * 255)); cnt[lvl[k] + 1]++; }
+          for (let l = 1; l < 257; l++) cnt[l] += cnt[l - 1];
+          const order = new Uint32Array(n);
+          for (let k = 0; k < n; k++) order[cnt[lvl[k]]++] = k;
+          for (let o = 0; o < n; o++) { const k = order[o]; put(k, LUT[lvl[k]]); }
+        } else {
+          const levels = probLevels(D.g, [0.98, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]);
+          const outer = levels[0], gray = 0xFF505050 >>> 0;
+          for (let k = 0; k < n; k++) if (at(k) < outer) put(k, gray);
+          contour = { D, cs, levels };
+        }
+      } else {
+        const { c, pal32 } = RES.colors;
+        for (let k = 0; k < n; k++) put(k, pal32[c[shown[k]]]);
+      }
+      ctx.putImageData(img, ox, oy);
+      if (contour) {
+        const { D, cs, levels } = contour;
+        ctx.save(); ctx.beginPath(); ctx.rect(ox, oy, iw, ih); ctx.clip();
+        ctx.translate(ox, oy); ctx.strokeStyle = '#111'; ctx.lineWidth = Math.max(1, dpr * 0.9);
+        ctx.beginPath();
+        for (const L of levels) marchingSquares(D.g, D.gw, D.gh, L, (x1, y1, x2, y2) => { ctx.moveTo((x1 + 0.5) * cs, (y1 + 0.5) * cs); ctx.lineTo((x2 + 0.5) * cs, (y2 + 0.5) * cs); });
+        ctx.stroke(); ctx.restore();
+      }
+    }
+  }
+  ctx.save(); ctx.scale(dpr, dpr);
+  if (t && popId !== p.pop) { ctx.fillStyle = '#b5651d'; ctx.font = '10px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText(`${popName(p.pop)} not gated here · showing ${popName(popId)}`, L + 4, T + 12); }
+  else if (!t) { ctx.fillStyle = '#9aa4ae'; ctx.font = '12px system-ui'; ctx.textAlign = 'center'; ctx.fillText('No data', L + W / 2, T + H / 2); }
+  else {
+    const miss = !X ? p.x.param : p.type !== 'hist' && !getCol(t, p.y.param) ? p.y.param : null;
+    if (miss) { ctx.fillStyle = '#c33'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText(`Parameter "${miss}" not in this tube`, L + W / 2, T + H / 2); }
+  }
+  drawAxes(ctx, G, p);
+  if (shown && ids && shown.length < ids.length) { ctx.fillStyle = '#8a95a1'; ctx.font = '9.5px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic'; ctx.fillText(`${shown.length.toLocaleString()} / ${ids.length.toLocaleString()} shown`, L + W - 3, T + H - 3); }
+  drawGates(ctx, G, p, w);
+  drawOverlay(ctx, G, w);
+  ctx.restore();
+  w.G = G;
+  // axis labels
+  w.xl.textContent = paramLabel(p.x.param);
+  w.xl.style.left = (L + W / 2) + 'px'; w.xl.style.top = (ch - 15) + 'px';
+  w.yl.textContent = p.type === 'hist' ? 'Count' : paramLabel(p.y.param);
+  w.yl.classList.toggle('static', p.type === 'hist');
+  w.yl.style.left = '1px'; w.yl.style.top = (T + H / 2) + 'px';
+}
+// 2-D event histogram on a cs-pixel grid, box-blurred `passes` times (≈ Gaussian smoothing)
+function smoothGrid(PX, PY, n, iw, ih, cs, passes) {
+  const gw = Math.ceil(iw / cs), gh = Math.ceil(ih / cs);
+  let g = new Float32Array(gw * gh), tmp = new Float32Array(gw * gh);
+  for (let k = 0; k < n; k++) g[Math.min(gh - 1, (PY[k] / cs) | 0) * gw + Math.min(gw - 1, (PX[k] / cs) | 0)]++;
+  for (let p = 0; p < passes; p++) {
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const o = y * gw; tmp[o + x] = (g[o + Math.max(0, x - 1)] + g[o + x] + g[o + Math.min(gw - 1, x + 1)]) / 3; }
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) g[y * gw + x] = (tmp[Math.max(0, y - 1) * gw + x] + tmp[y * gw + x] + tmp[Math.min(gh - 1, y + 1) * gw + x]) / 3;
+  }
+  let max = 0; for (const v of g) if (v > max) max = v;
+  return { g, gw, gh, max };
+}
+// density thresholds whose contours enclose the given fractions of all events
+function probLevels(g, fracs) {
+  const v = Array.from(g).filter(x => x > 0).sort((a, b) => b - a), tot = v.reduce((a, b) => a + b, 0);
+  const out = [];
+  for (const f of fracs) { let c = 0, i = 0; while (i < v.length && c < f * tot) c += v[i++]; out.push(v[Math.max(0, i - 1)] || 0); }
+  return out.filter(x => x > 0);
+}
+// emits iso-line segments (grid coordinates) of level L
+function marchingSquares(g, gw, gh, L, seg) {
+  for (let y = 0; y < gh - 1; y++) for (let x = 0; x < gw - 1; x++) {
+    const a = g[y * gw + x], b = g[y * gw + x + 1], c = g[(y + 1) * gw + x + 1], d = g[(y + 1) * gw + x];
+    const id = (a >= L ? 8 : 0) | (b >= L ? 4 : 0) | (c >= L ? 2 : 0) | (d >= L ? 1 : 0);
+    if (id === 0 || id === 15) continue;
+    const T = () => [x + (L - a) / (b - a), y], R = () => [x + 1, y + (L - b) / (c - b)];
+    const B = () => [x + (L - d) / (c - d), y + 1], Lf = () => [x, y + (L - a) / (d - a)];
+    const s = (p, q) => { const P = p(), Q = q(); seg(P[0], P[1], Q[0], Q[1]); };
+    switch (id) {
+      case 1: case 14: s(Lf, B); break;
+      case 2: case 13: s(B, R); break;
+      case 3: case 12: s(Lf, R); break;
+      case 4: case 11: s(T, R); break;
+      case 5: s(T, R); s(Lf, B); break;
+      case 6: case 9: s(T, B); break;
+      case 7: case 8: s(T, Lf); break;
+      case 10: s(T, Lf); s(B, R); break;
+    }
+  }
+}
+function drawAxes(ctx, G, p) {
+  const { L, T, W, H } = G;
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+  ctx.strokeRect(L + 0.5, T + 0.5, W, H);
+  ctx.fillStyle = '#000';
+  const axes = [['x', G.xa, p.x], ['y', G.ya, p.type === 'hist' ? G.ya.ax : p.y]];
+  for (const [dir, fa, ax] of axes) {
+    const ticks = ticksFor(ax);
+    const pos = v => dir === 'x' ? u2dx(G, fa.fu(v)) : u2dy(G, fa.fu(v));
+    ctx.beginPath();
+    for (const tk of ticks) {
+      const d = Math.round(pos(tk.v)) + 0.5, len = tk.major ? 5 : 3;
+      if (dir === 'x') { ctx.moveTo(d, T + H); ctx.lineTo(d, T + H + len); } else { ctx.moveTo(L, d); ctx.lineTo(L - len, d); }
+    }
+    ctx.stroke();
+    const majors = ticks.filter(t => t.major).sort((a, b) => (a.v === 0 ? -1 : b.v === 0 ? 1 : 0) || (b.exp ?? 0) - (a.exp ?? 0));
+    const used = [];
+    for (const tk of majors) {
+      const d = pos(tk.v);
+      if (used.some(u => Math.abs(u - d) < (dir === 'x' ? 26 : 14))) continue;
+      used.push(d);
+      drawTickLabel(ctx, dir, d, G, tk);
+    }
+    const e = ax.scale === 'lin' ? linExp(ax) : 0;
+    if (e > 0) drawMultiplier(ctx, dir, G, e);
+  }
+}
+function drawMultiplier(ctx, dir, G, e) {
+  const { L, T, W, H } = G;
+  ctx.save();
+  ctx.font = '10px system-ui';
+  const a = '(x10', b = ')', ew = (ctx.font = '8px system-ui', ctx.measureText(String(e)).width);
+  ctx.font = '10px system-ui';
+  const aw = ctx.measureText(a).width, tw = aw + ew + ctx.measureText(b).width;
+  if (dir === 'x') ctx.translate(L + W - tw, T + H + 32);
+  else { ctx.translate(L - 34, T + tw); ctx.rotate(-Math.PI / 2); }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(a, 0, 0);
+  ctx.font = '8px system-ui'; ctx.fillText(String(e), aw, -5);
+  ctx.font = '10px system-ui'; ctx.fillText(b, aw + ew, 0);
+  ctx.restore();
+}
+function drawTickLabel(ctx, dir, d, G, tk) {
+  const { L, T, H } = G;
+  ctx.font = '10px system-ui';
+  if (tk.exp === undefined) {
+    if (dir === 'x') { ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(tk.label, d, T + H + 6); }
+    else { ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(tk.label, L - 7, d); }
+    return;
+  }
+  const base = (tk.neg ? '-' : '') + '10', ex = String(tk.exp);
+  const bw = ctx.measureText(base).width; ctx.font = '8px system-ui';
+  const ew = ctx.measureText(ex).width, tw = bw + ew;
+  let x0, y0;
+  if (dir === 'x') { x0 = d - tw / 2; y0 = T + H + 15; } else { x0 = L - 7 - tw; y0 = d + 4; }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.font = '10px system-ui'; ctx.fillText(base, x0, y0);
+  ctx.font = '8px system-ui'; ctx.fillText(ex, x0 + bw, y0 - 5);
+}
+function gatesOnPlot(p) {
+  return S.gates.filter(g => g.parentId === p.pop && g.x === p.x.param &&
+    (p.type === 'hist' ? g.type === 'interval' : g.type !== 'interval' && g.y === p.y.param));
+}
+// display-space geometry of a gate on a plot
+function gateDisp(g, G) {
+  const P = g.type === 'interval'
+    ? g.pts.map(([a]) => [r2dx(G, a), G.T + G.H * (g.barY ?? 0.3)])
+    : g.pts.map(([a, b]) => [r2dx(G, a), r2dy(G, b)]);
+  return P;
+}
+// sampled outline (curved when the gate was drawn on differently scaled axes)
+function gateOutline(g, G, P) {
+  if (g.type === 'rect') { const [[a, b], [c, d]] = P; return [[a, b], [c, b], [c, d], [a, d]]; }
+  const gx = axisFns(g.xAx), gy = axisFns(g.yAx);
+  const toD = (u, v) => [r2dx(G, gx.inv(u)), r2dy(G, gy.inv(v))];
+  if (g.type === 'ellipse') {
+    const U = g.pts.map(([a, b]) => [gx.fu(a), gy.fu(b)]);
+    const cx = (U[0][0] + U[1][0]) / 2, cy = (U[0][1] + U[1][1]) / 2, rx = Math.abs(U[1][0] - U[0][0]) / 2, ry = Math.abs(U[1][1] - U[0][1]) / 2;
+    const o = []; for (let k = 0; k < 72; k++) { const a = k / 72 * Math.PI * 2; o.push(toD(cx + rx * Math.cos(a), cy + ry * Math.sin(a))); }
+    return o;
+  }
+  if (sameAx(g.xAx, G.xa.ax) && sameAx(g.yAx, G.ya.ax)) return P;
+  const U = g.pts.map(([a, b]) => [gx.fu(a), gy.fu(b)]), o = [];
+  for (let i = 0; i < U.length; i++) { const [a, b] = U[i], [c, d] = U[(i + 1) % U.length]; for (let s = 0; s < 16; s++) o.push(toD(a + (c - a) * s / 16, b + (d - b) * s / 16)); }
+  return o;
+}
+// polygon gates get a bounding box whose corners scale the whole gate
+function scaleBox(g, P) {
+  if (g.type !== 'poly') return null;
+  const xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+  const b = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+  b.corners = [0, 1, 2, 3].map(k => [(k & 1 ? b.x1 + 7 : b.x0 - 7), (k & 2 ? b.y1 + 7 : b.y0 - 7)]);
+  return b;
+}
+function handlesOf(g, P) {
+  if (g.type === 'rect' || g.type === 'ellipse') return [0, 1, 2, 3].map(k => [P[k & 1][0], P[k >> 1][1]]);
+  return P;
+}
+function drawGates(ctx, G, p, w) {
+  const { L, T, W, H } = G, parN = popCount(p.pop);
+  w.labels = [];
+  let selDraw = null;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(L, T, W + 1, H + 1); ctx.clip();
+  for (const g of gatesOnPlot(p)) {
+    const P = gateDisp(g, G), sel = S.sel === g.id;
+    ctx.strokeStyle = g.type === 'quad' ? '#222' : g.color;
+    ctx.lineWidth = sel ? 2 : 1.2;
+    ctx.font = '11px system-ui'; ctx.textBaseline = 'alphabetic';
+    if (g.type === 'quad') {
+      const [cx, cy] = P[0];
+      ctx.beginPath(); ctx.moveTo(cx + 0.5, T); ctx.lineTo(cx + 0.5, T + H); ctx.moveTo(L, cy + 0.5); ctx.lineTo(L + W, cy + 0.5); ctx.stroke();
+      const pos = { UL: [L + 3, T + 12, 'left'], UR: [L + W - 3, T + 12, 'right'], LL: [L + 3, T + H - 4, 'left'], LR: [L + W - 3, T + H - 4, 'right'] };
+      for (const q of QK) {
+        const [x, y, al] = pos[q];
+        const txt = fitText(ctx, g.qnames[q], `(${pct(popCount(g.id + ':' + q), parN)})`, W / 2 - 6);
+        ctx.textAlign = al; ctx.fillStyle = g.qcolors[q]; labelBg(ctx, txt, x, y, al);
+        ctx.fillText(txt, x, y);
+        const tw = ctx.measureText(txt).width;
+        w.labels.push({ gid: g.id, quad: q, x: al === 'left' ? x : x - tw, y: y - 11, w: tw, h: 14 });
+      }
+    } else if (g.type === 'interval') {
+      const [[a, y], [b]] = P, x0 = Math.min(a, b), x1 = Math.max(a, b);
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.moveTo(x0, y - 6); ctx.lineTo(x0, y + 6); ctx.moveTo(x1, y - 6); ctx.lineTo(x1, y + 6); ctx.stroke();
+      const txt = `${g.name}(${pct(popCount(g.id), parN)})`;
+      ctx.fillStyle = g.color; ctx.textAlign = 'center';
+      const cx = clamp((x0 + x1) / 2, L + 40, L + W - 40);
+      labelBg(ctx, txt, cx, y - 5, 'center'); ctx.fillText(txt, cx, y - 5);
+      const tw = ctx.measureText(txt).width;
+      w.labels.push({ gid: g.id, x: cx - tw / 2, y: y - 16, w: tw, h: 13 });
+    } else {
+      const O = gateOutline(g, G, P);
+      ctx.beginPath(); O.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.stroke();
+      const xs = O.map(o => o[0]), ys = O.map(o => o[1]);
+      const txt = `${g.name}(${pct(popCount(g.id), parN)})`;
+      const lx = clamp(Math.min(...xs) + 2, L + 2, L + W - 60), ly = clamp(Math.min(...ys) - 3, T + 11, T + H - 3);
+      ctx.fillStyle = g.color; ctx.textAlign = 'left';
+      labelBg(ctx, txt, lx, ly, 'left'); ctx.fillText(txt, lx, ly);
+      w.labels.push({ gid: g.id, x: lx, y: ly - 11, w: ctx.measureText(txt).width, h: 14 });
+    }
+    if (sel) selDraw = () => {
+      const sb = scaleBox(g, P);
+      if (sb) {
+        ctx.save(); ctx.setLineDash([3, 3]); ctx.strokeStyle = '#2b6cb0'; ctx.lineWidth = 1;
+        ctx.strokeRect(sb.x0 - 7 + .5, sb.y0 - 7 + .5, sb.x1 - sb.x0 + 14, sb.y1 - sb.y0 + 14); ctx.restore();
+        ctx.fillStyle = '#2b6cb0';
+        for (const [x, y] of sb.corners) ctx.fillRect(x - 4, y - 4, 8, 8);
+      }
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+      for (const [x, y] of handlesOf(g, P)) { ctx.fillRect(x - 3, y - 3, 6, 6); ctx.strokeRect(x - 3 + .5, y - 3 + .5, 6, 6); }
+    };
+  }
+  ctx.restore();
+  // handles may sit outside the plot frame, so draw them unclipped
+  if (selDraw) selDraw();
+}
+// shrink, then truncate the name so "name(xx.xx%)" fits in maxW
+function fitText(ctx, name, tail, maxW) {
+  ctx.font = '11px system-ui';
+  if (ctx.measureText(name + tail).width <= maxW) return name + tail;
+  ctx.font = '10px system-ui';
+  if (ctx.measureText(name + tail).width <= maxW) return name + tail;
+  let n = name;
+  while (n.length > 1 && ctx.measureText(n + '…' + tail).width > maxW) n = n.slice(0, -1);
+  return n + '…' + tail;
+}
+function labelBg(ctx, txt, x, y, al) {
+  const tw = ctx.measureText(txt).width, x0 = al === 'left' ? x : al === 'right' ? x - tw : x - tw / 2;
+  const f = ctx.fillStyle; ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(x0 - 1, y - 10, tw + 2, 13); ctx.fillStyle = f;
+}
+function drawOverlay(ctx, G, w) {
+  if (!IA || IA.w !== w) return;
+  ctx.save(); ctx.strokeStyle = '#000'; ctx.setLineDash([4, 3]); ctx.lineWidth = 1;
+  if (IA.kind === 'box') {
+    const { x0, y0, x1, y1 } = IA;
+    ctx.beginPath();
+    if (IA.type === 'ellipse') ctx.ellipse((x0 + x1) / 2, (y0 + y1) / 2, Math.abs(x1 - x0) / 2, Math.abs(y1 - y0) / 2, 0, 0, Math.PI * 2);
+    else ctx.rect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0));
+    ctx.stroke();
+  } else if (IA.kind === 'poly') {
+    ctx.beginPath(); IA.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    if (IA.hover) ctx.lineTo(...IA.hover);
+    ctx.stroke(); ctx.setLineDash([]);
+    IA.pts.forEach(([x, y], i) => { ctx.fillStyle = i === 0 ? '#e0242a' : '#000'; ctx.fillRect(x - 2.5, y - 2.5, 5, 5); });
+  } else if (IA.kind === 'ival') {
+    ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(IA.x0, IA.y); ctx.lineTo(IA.x1, IA.y); ctx.moveTo(IA.x0, IA.y - 6); ctx.lineTo(IA.x0, IA.y + 6); ctx.moveTo(IA.x1, IA.y - 6); ctx.lineTo(IA.x1, IA.y + 6); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ============================================================ plot interaction
+let IA = null;
+const TOOLS = { pointer: 'Select / edit', rect: 'Rectangle gate', poly: 'Polygon gate', ellipse: 'Ellipse gate', quad: 'Quadrant gate', interval: 'Interval (histogram) gate', zoomin: 'Zoom in: drag a box on a plot (click = 2×)', zoomout: 'Zoom out: click a plot to step back' };
+function setTool(t) {
+  S.tool = t; IA = null;
+  document.querySelectorAll('.tb[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  if (t !== 'pointer') msg(TOOLS[t] + (t === 'poly' ? ': click to add vertices, double-click or click the first point to close' : ''));
+  renderAll();
+}
+function nextGateName() {
+  const used = new Set(POPS.map(p => p.name));
+  for (let i = 1; ; i++) if (!used.has('P' + i)) return 'P' + i;
+}
+function nextColor() { return GCOLORS[S.gates.length % GCOLORS.length]; }
+function createGate(p, type, pts, extra = {}) {
+  if (RES) p.pop = resolvePop(p.pop);
+  pushUndo();
+  const g = { id: uid('g'), type, parentId: p.pop, x: p.x.param, y: type === 'interval' ? null : p.y.param, xAx: axCopy(p.x), yAx: type === 'interval' ? null : axCopy(p.y), pts, color: nextColor(), name: nextGateName(), paint: false, ...extra };
+  if (type === 'quad') {
+    const xn = shortName(p.x.param), yn = shortName(p.y.param);
+    g.qnames = { UL: `${xn}-${yn}+`, UR: `${xn}+${yn}+`, LL: `${xn}-${yn}-`, LR: `${xn}+${yn}-` };
+    g.qcolors = { UL: '#1f77b4', UR: '#e0242a', LL: '#555555', LR: '#2ca02c' };
+    g.qpaint = {};
+  }
+  S.gates.push(g);
+  S.sel = g.id;
+  setTool('pointer');
+  recalc();
+  return g;
+}
+function hitGate(w, p, mx, my) {
+  const G = w.G;
+  for (const lb of w.labels || []) if (mx >= lb.x - 2 && mx <= lb.x + lb.w + 2 && my >= lb.y && my <= lb.y + lb.h) return { g: S.gates.find(g => g.id === lb.gid), quad: lb.quad, label: true };
+  const gs = gatesOnPlot(p).reverse();
+  const sg = gs.find(g => g.id === S.sel);
+  if (sg) {
+    const H = handlesOf(sg, gateDisp(sg, G));
+    for (let k = 0; k < H.length; k++) if (Math.abs(H[k][0] - mx) <= 6 && Math.abs(H[k][1] - my) <= 6) return { g: sg, handle: k };
+    const sb = scaleBox(sg, gateDisp(sg, G));
+    if (sb) for (let k = 0; k < 4; k++) if (Math.abs(sb.corners[k][0] - mx) <= 6 && Math.abs(sb.corners[k][1] - my) <= 6) return { g: sg, scale: k };
+  }
+  for (const g of gs) {
+    const P = gateDisp(g, G);
+    if (g.type === 'quad') {
+      const [cx, cy] = P[0];
+      if (Math.abs(mx - cx) < 5 || Math.abs(my - cy) < 5) return { g, body: true };
+    } else if (g.type === 'interval') {
+      const x0 = Math.min(P[0][0], P[1][0]), x1 = Math.max(P[0][0], P[1][0]);
+      if (mx >= x0 - 4 && mx <= x1 + 4 && Math.abs(my - P[0][1]) < 8) return { g, body: true };
+    } else if (pip(mx, my, gateOutline(g, G, P))) return { g, body: true };
+  }
+  return null;
+}
+function quadAt(g, G, mx, my) {
+  const [cx, cy] = gateDisp(g, G)[0];
+  return my < cy ? (mx < cx ? 'UL' : 'UR') : (mx < cx ? 'LL' : 'LR');
+}
+function attachPlotEvents(w) {
+  const cv = w.cv;
+  const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const inPlot = (G, x, y) => x >= G.L && x <= G.L + G.W && y >= G.T && y <= G.T + G.H;
+  const cl = (G, x, y) => [clamp(x, G.L - 8, G.L + G.W + 8), clamp(y, G.T - 8, G.T + G.H + 8)];
+  cv.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    const p = getPlot(w.id), G = w.G;
+    if (!p || !G) return;
+    const [mx, my] = pos(e);
+    const tool = S.tool;
+    if (tool === 'pointer') {
+      const h = hitGate(w, p, mx, my);
+      S.sel = h ? h.g.id : null;
+      if (h && !h.label) {
+        const P0 = gateDisp(h.g, G);
+        IA = { kind: 'drag', w, gid: h.g.id, mode: h.scale !== undefined ? 'scale' : h.handle !== undefined ? 'handle' : 'move', k: h.scale ?? h.handle, sx: mx, sy: my, P0, box: scaleBox(h.g, P0), barY0: h.g.barY, pushed: false };
+        cv.setPointerCapture(e.pointerId);
+      }
+      renderAll();
+      return;
+    }
+    if (!inPlot(G, mx, my) || !activeTube()) return;
+    if (tool === 'zoomout') return zoomOut(p, G, mx, my);
+    if (tool === 'zoomin') { IA = { kind: 'box', w, type: 'zoom', x0: mx, y0: my, x1: mx, y1: my }; cv.setPointerCapture(e.pointerId); return renderAll(); }
+    const hist = p.type === 'hist';
+    if (hist && tool !== 'interval' && tool !== 'rect') return msg('Use the interval gate on histograms');
+    if (!hist && tool === 'interval') return msg('Interval gates are for histograms; use rectangle/polygon here');
+    if (tool === 'interval' || (hist && tool === 'rect')) { IA = { kind: 'ival', w, x0: mx, x1: mx, y: my }; cv.setPointerCapture(e.pointerId); }
+    else if (tool === 'rect' || tool === 'ellipse') { IA = { kind: 'box', w, type: tool, x0: mx, y0: my, x1: mx, y1: my }; cv.setPointerCapture(e.pointerId); }
+    else if (tool === 'quad') createGate(p, 'quad', [[d2rx(G, mx), d2ry(G, my)]]);
+    else if (tool === 'poly') {
+      if (!IA || IA.kind !== 'poly' || IA.w !== w) IA = { kind: 'poly', w, pts: [] };
+      const f = IA.pts[0];
+      if (IA.pts.length >= 3 && Math.hypot(f[0] - mx, f[1] - my) < 8) return finishPoly(w);
+      IA.pts.push([mx, my]);
+    }
+    renderAll();
+  });
+  cv.addEventListener('pointermove', e => {
+    const p = getPlot(w.id), G = w.G;
+    if (!p || !G) return;
+    const [mx, my] = pos(e);
+    if (inPlot(G, mx, my)) $('#stXY').textContent = `X: ${fmtVal(d2rx(G, mx))}` + (p.type === 'hist' ? '' : `   Y: ${fmtVal(d2ry(G, my))}`);
+    if (!IA || IA.w !== w) {
+      if (S.tool === 'pointer') { const h = hitGate(w, p, mx, my); cv.style.cursor = h ? (h.scale !== undefined ? (h.scale === 0 || h.scale === 3 ? 'nwse-resize' : 'nesw-resize') : h.handle !== undefined ? 'crosshair' : h.label ? 'pointer' : 'move') : 'default'; }
+      else cv.style.cursor = S.tool === 'zoomin' ? 'zoom-in' : S.tool === 'zoomout' ? 'zoom-out' : 'crosshair';
+      return;
+    }
+    if (IA.kind === 'box') { [IA.x1, IA.y1] = cl(G, mx, my); renderAll(); }
+    else if (IA.kind === 'ival') { IA.x1 = cl(G, mx, my)[0]; renderAll(); }
+    else if (IA.kind === 'poly') { IA.hover = [mx, my]; renderAll(); }
+    else if (IA.kind === 'drag') {
+      const g = S.gates.find(q => q.id === IA.gid);
+      if (!g) return;
+      const dx = mx - IA.sx, dy = my - IA.sy;
+      if (!IA.pushed) { if (Math.abs(dx) + Math.abs(dy) < 2) return; pushUndo(); IA.pushed = true; }
+      let P = IA.P0.map(a => a.slice());
+      if (IA.mode === 'move') P = P.map(([a, b]) => [a + dx, b + dy]);
+      else if (IA.mode === 'scale') {
+        // drag a corner: scale from the opposite corner (Alt: from the centre, Shift: keep proportions)
+        const b = IA.box, cx = IA.k & 1 ? b.x1 : b.x0, cy = IA.k & 2 ? b.y1 : b.y0;
+        const ax = e.altKey ? (b.x0 + b.x1) / 2 : (IA.k & 1 ? b.x0 : b.x1), ay = e.altKey ? (b.y0 + b.y1) / 2 : (IA.k & 2 ? b.y0 : b.y1);
+        let fx = Math.max(0.05, (cx + dx - ax) / (cx - ax || 1)), fy = Math.max(0.05, (cy + dy - ay) / (cy - ay || 1));
+        if (e.shiftKey) fx = fy = Math.max(fx, fy);
+        P = P.map(([a, c]) => [ax + (a - ax) * fx, ay + (c - ay) * fy]);
+      }
+      else if (g.type === 'rect' || g.type === 'ellipse') { const k = IA.k; P[k & 1][0] = IA.P0[k & 1][0] + dx; P[k >> 1][1] = IA.P0[k >> 1][1] + dy; }
+      else { P[IA.k][0] += dx; P[IA.k][1] += dy; }
+      P = P.map(([a, b]) => cl(G, a, b));
+      if (g.type === 'interval') {
+        g.pts = P.map(([a]) => [d2rx(G, a), 0]);
+        if (IA.mode === 'move') g.barY = clamp((IA.barY0 ?? 0.3) + dy / G.H, 0.06, 0.97);
+        g.xAx = axCopy(p.x);
+      } else {
+        g.pts = P.map(([a, b]) => [d2rx(G, a), d2ry(G, b)]);
+        g.xAx = axCopy(p.x); g.yAx = axCopy(p.y);
+      }
+      scheduleRecalc();
+    }
+  });
+  cv.addEventListener('pointerup', e => {
+    const p = getPlot(w.id), G = w.G;
+    if (!IA || IA.w !== w || !p) return;
+    if (IA.kind === 'box') {
+      const { x0, y0, x1, y1, type } = IA;
+      IA = null;
+      if (type === 'zoom') return zoomIn(p, G, x0, y0, x1, y1);
+      if (Math.abs(x1 - x0) > 4 && Math.abs(y1 - y0) > 4) createGate(p, type, [[d2rx(G, Math.min(x0, x1)), d2ry(G, Math.max(y0, y1))], [d2rx(G, Math.max(x0, x1)), d2ry(G, Math.min(y0, y1))]]);
+      else renderAll();
+    } else if (IA.kind === 'ival') {
+      const { x0, x1, y } = IA;
+      IA = null;
+      if (Math.abs(x1 - x0) > 3) createGate(p, 'interval', [[d2rx(G, Math.min(x0, x1)), 0], [d2rx(G, Math.max(x0, x1)), 0]], { barY: (y - G.T) / G.H });
+      else renderAll();
+    } else if (IA.kind === 'drag') { IA = null; renderAll(); }
+  });
+  cv.addEventListener('dblclick', e => {
+    const p = getPlot(w.id), G = w.G;
+    if (!p || !G) return;
+    const [mx, my] = pos(e);
+    if (IA && IA.kind === 'poly' && IA.w === w) {
+      // drop the duplicate vertex added by the second click
+      while (IA.pts.length > 1) { const a = IA.pts[IA.pts.length - 1], b = IA.pts[IA.pts.length - 2]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 4) IA.pts.pop(); else break; }
+      return finishPoly(w);
+    }
+    if (S.tool !== 'pointer') return;
+    const h = hitGate(w, p, mx, my);
+    if (!h) return;
+    const quad = h.g.type === 'quad' ? (h.quad || quadAt(h.g, G, mx, my)) : null;
+    if (h.label) renamePop(quad ? h.g.id + ':' + quad : h.g.id);
+    else drillDown(p, quad ? h.g.id + ':' + quad : h.g.id);
+  });
+  cv.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    const p = getPlot(w.id), G = w.G;
+    if (!p || !G) return;
+    const [mx, my] = pos(e);
+    const h = hitGate(w, p, mx, my);
+    const items = [];
+    if (h) {
+      S.sel = h.g.id; renderAll();
+      const popId = h.g.type === 'quad' ? h.g.id + ':' + (h.quad || quadAt(h.g, G, mx, my)) : h.g.id;
+      items.push({ head: `Gate: ${POPMAP[popId].name}` }, ...popMenuItems(popId), '-');
+    }
+    items.push(...plotMenuItems(p, w));
+    showMenu(e.clientX, e.clientY, items);
+  });
+  cv.addEventListener('pointerleave', () => $('#stXY').textContent = '');
+}
+function finishPoly(w) {
+  const p = getPlot(w.id), G = w.G, pts = IA.pts;
+  IA = null;
+  if (pts.length < 3) { renderAll(); return msg('A polygon needs at least 3 points'); }
+  createGate(p, 'poly', pts.map(([a, b]) => [d2rx(G, a), d2ry(G, b)]));
+}
+// paste keeps the raw coordinates when the plot shows the same parameters;
+// otherwise the shape is placed at the same relative position on this plot's axes
+function pasteGate(p) {
+  const src = S.clip, w = WIN[p.id], G = w && w.G;
+  if (!src || !G) return;
+  const same = src.x === p.x.param && (src.type === 'interval' || src.y === p.y.param);
+  const move = (v, from, toFa) => { const fa = axisFns(from); return toFa.inv(toFa.t0 + (fa.fu(v) - fa.t0) / (fa.t1 - fa.t0) * (toFa.t1 - toFa.t0)); };
+  const pts = same ? clone(src.pts) : src.pts.map(([a, b]) => [move(a, src.xAx, G.xa), src.type === 'interval' ? 0 : move(b, src.yAx, G.ya)]);
+  const extra = { color: src.color };
+  if (src.type === 'interval') extra.barY = src.barY;
+  const used = new Set(POPS.map(q => q.name));
+  if (src.type !== 'quad' && !used.has(src.name)) extra.name = src.name;
+  const g = createGate(p, src.type, pts, extra);
+  if (same) { g.xAx = clone(src.xAx); g.yAx = src.yAx ? clone(src.yAx) : null; }
+  if (src.type === 'quad' && same) { g.qnames = clone(src.qnames); g.qcolors = clone(src.qcolors); }
+  recalc();
+  msg('Gate pasted');
+}
+function drillDown(p, popId) {
+  const w = WIN[p.id];
+  const box = freeSpot(p.win.w, p.win.h);
+  const t = activeTube(), names = t ? t.params.map(q => q.name) : [];
+  const fl = names.filter(n => !isScatter(n));
+  const g = POPMAP[popId].gate;
+  const used = new Set([g.x, g.y]);
+  const free = fl.filter(n => !used.has(n));
+  addPlot('dot', popId, free[0] || p.x.param, free[1] || names.find(n => /^SSC-A$/i.test(n)) || p.y.param, box);
+}
+
+// ============================================================ menus
+function closeMenus() { document.querySelectorAll('.menu').forEach(m => m.remove()); document.querySelectorAll('#menubar .mb.open').forEach(m => m.classList.remove('open')); }
+function buildMenu(items) {
+  const m = el('div', { class: 'menu' });
+  for (const it of items) {
+    if (!it) continue;
+    if (it === '-') { m.append(el('div', { class: 'msep' })); continue; }
+    if (it.head) { m.append(el('div', { class: 'mhead' }, it.head)); continue; }
+    const r = el('div', { class: 'mitem' + (it.disabled ? ' dis' : '') }, el('span', { class: 'mchk' }, it.checked ? '✓' : ''), el('span', { style: it.indent ? `padding-left:${it.indent * 12}px` : '' }, it.label), el('span', { class: 'mkey' }, it.sub ? '▸' : keyLabel(it.key || '')));
+    r.addEventListener('mouseenter', () => {
+      if (m._child) { m._child.querySelectorAll && closeChain(m._child); m._child = null; }
+      if (it.sub) {
+        const sm = buildMenu(it.sub), rb = r.getBoundingClientRect();
+        document.body.append(sm);
+        const sb = sm.getBoundingClientRect();
+        sm.style.left = (rb.right + sb.width > innerWidth ? rb.left - sb.width : rb.right) + 'px';
+        sm.style.top = Math.min(rb.top - 3, innerHeight - sb.height - 4) + 'px';
+        m._child = sm;
+      }
+    });
+    if (!it.sub) r.addEventListener('click', () => { closeMenus(); it.action && it.action(); });
+    m.append(r);
+  }
+  return m;
+}
+function closeChain(m) { if (m._child) closeChain(m._child); m.remove(); }
+function showMenu(x, y, items) {
+  closeMenus();
+  const m = buildMenu(items);
+  document.body.append(m);
+  const b = m.getBoundingClientRect();
+  m.style.left = Math.min(x, innerWidth - b.width - 4) + 'px';
+  m.style.top = Math.min(y, innerHeight - b.height - 4) + 'px';
+  return m;
+}
+addEventListener('pointerdown', e => { if (!e.target.closest('.menu') && !e.target.closest('#menubar')) closeMenus(); });
+function popMenu(e, plotId) {
+  const p = getPlot(plotId);
+  showMenu(e.clientX, e.clientY, [{ head: 'Show population' }, ...POPS.map(q => ({ label: q.name, indent: q.depth, checked: q.id === p.pop, action: () => { pushUndo(); p.pop = q.id; recalc(); } }))]);
+}
+function paramMenu(e, plotId, axis) {
+  const p = getPlot(plotId), t = activeTube();
+  if (!t) return;
+  const items = t.params.map(q => ({ label: q.label, checked: q.name === p[axis].param, action: () => { pushUndo(); p[axis] = { param: q.name, ...defaultAxis(q.name) }; p.zoomStack = []; recalc(); } }));
+  items.push('-', { label: 'Properties…', action: () => propsDialog(p) });
+  showMenu(e.clientX, e.clientY, items);
+}
+const PLOT_TYPES = { dot: 'Dot plot', density: 'Density plot', pseudo: 'Pseudocolor plot', contour: 'Contour plot', hist: 'Histogram' };
+function plotMenuItems(p, w) {
+  const set = (k, v) => () => { pushUndo(); p[k] = v; if (k === 'type' && v !== 'hist' && !p.y) p.y = { param: 'SSC-A', ...defaultAxis('SSC-A') }; recalc(); };
+  return [
+    { label: 'Plot type', sub: Object.entries(PLOT_TYPES).map(([k, v]) => ({ label: v, checked: p.type === k, action: set('type', k) })) },
+    { label: 'Population', sub: POPS.map(q => ({ label: q.name, indent: q.depth, checked: q.id === p.pop, action: set('pop', q.id) })) },
+    { label: 'Properties…', action: () => propsDialog(p) },
+    { label: 'Swap axes', disabled: p.type === 'hist', action: () => { pushUndo(); [p.x, p.y] = [p.y, p.x]; recalc(); } },
+    { label: 'Events to display', sub: [
+      { label: `Default (${S.maxEv ? S.maxEv.toLocaleString() : 'all'})`, checked: p.maxEv == null, action: set('maxEv', undefined) },
+      { label: 'All events', checked: p.maxEv === 0, action: set('maxEv', 0) },
+      ...[1000, 5000, 10000, 50000, 100000].map(n => ({ label: n.toLocaleString(), checked: p.maxEv === n, action: set('maxEv', n) })),
+      { label: 'Custom…', action: () => promptText('Events to display in this plot', String(p.maxEv || 10000), v => { const n = parseInt(v.replace(/\D/g, ''), 10); if (n > 0) set('maxEv', n)(); }) },
+    ] },
+    { label: 'Dot size', disabled: p.type === 'hist', sub: [1, 2, 3].map(n => ({ label: n + ' px', checked: (p.dot || 1) === n, action: set('dot', n) })) },
+    '-',
+    { label: S.clip ? `Paste gate (${S.clip.type === 'quad' ? 'quadrant' : S.clip.name})` : 'Paste gate', disabled: !S.clip || !activeTube() || (S.clip.type === 'interval') !== (p.type === 'hist'), action: () => pasteGate(p) },
+    '-',
+    { label: 'Duplicate plot', action: () => { const q = clone(p); q.id = uid('p'); q.views = {}; q.win = freeSpot(p.win.w, p.win.h); pushUndo(); S.plots.push(q); createPlotWin(q); fitWorkspace(); renderAll(); } },
+    { label: 'Export as PNG', action: () => exportPlotPNG(p) },
+    { label: 'Delete plot', action: () => closeWin(p.id) },
+  ];
+}
+function popMenuItems(popId) {
+  const pop = POPMAP[popId];
+  if (!pop || !pop.gate) return [
+    { label: 'New plot of this population', action: () => addPlot('dot', popId) },
+    { label: 'Apply all gates to all tubes', disabled: !S.gates.length || S.tubes.length < 2, action: () => applyGatesToTubes(null, S.tubes.map(t => t.id), true) },
+    { label: 'Apply all gates to tubes…', disabled: !S.gates.length || S.tubes.length < 2, action: () => applyDialog(null) },
+  ];
+  const gid = pop.gate.id, multi = S.tubes.length > 1;
+  return [
+    { label: 'Rename…', key: 'dbl-click', action: () => renamePop(popId) },
+    { label: 'Color…', action: () => recolorPop(popId) },
+    { label: 'Color events with gate color', checked: pop.paint, action: () => togglePaint(popId) },
+    { label: 'New plot of this population', action: () => addPlot('dot', popId) },
+    { label: 'Export population as FCS…', action: () => exportPopFCS(popId) },
+    { label: 'Copy gate', action: () => { S.clip = clone(pop.gate); msg(`Copied ${pop.gate.type === 'quad' ? 'quadrant gate' : pop.gate.name} — right-click a plot → Paste gate`); } },
+    '-',
+    { label: 'Apply to all tubes', disabled: !multi, action: () => applyGatesToTubes([gid], S.tubes.map(t => t.id), true) },
+    { label: 'Apply to tubes…', disabled: !multi, action: () => applyDialog([gid]) },
+    '-',
+    { label: pop.gate.type === 'quad' ? 'Delete quadrant gate' : 'Delete gate', key: 'Del', action: () => deleteGate(pop.gate.id) },
+  ];
+}
+function renamePop(popId) {
+  const pop = POPMAP[popId];
+  if (!pop || !pop.gate) return;
+  promptText('Rename population', pop.name, v => {
+    if (!v) return;
+    pushUndo();
+    if (pop.quad) pop.gate.qnames[pop.quad] = v; else pop.gate.name = v;
+    recalc();
+  });
+}
+function recolorPop(popId) {
+  const pop = POPMAP[popId];
+  if (!pop || !pop.gate) return;
+  const ci = $('#colorIn');
+  ci.value = pop.color;
+  ci.oninput = null;
+  ci.onchange = () => { pushUndo(); if (pop.quad) pop.gate.qcolors[pop.quad] = ci.value; else pop.gate.color = ci.value; recalc(); };
+  ci.click();
+}
+function togglePaint(popId) {
+  const pop = POPMAP[popId];
+  pushUndo();
+  if (pop.quad) pop.gate.qpaint[pop.quad] = !pop.paint; else pop.gate.paint = !pop.paint;
+  recalc();
+}
+function deleteGate(gid) {
+  const g = S.gates.find(q => q.id === gid);
+  if (!g) return;
+  pushUndo();
+  const dead = new Set(), deadPops = new Set();
+  const mark = x => { dead.add(x.id); popIdsOf(x).forEach(id => deadPops.add(id)); S.gates.filter(c => popIdsOf(x).includes(c.parentId)).forEach(mark); };
+  mark(g);
+  S.gates = S.gates.filter(q => !dead.has(q.id));
+  for (const p of S.plots) if (deadPops.has(p.pop)) p.pop = g.parentId;
+  S.sel = null;
+  recalc();
+}
+
+// ============================================================ dialogs
+function dialog(title, body, buttons) {
+  const ov = el('div', { class: 'ovl' });
+  const close = () => { ov.remove(); removeEventListener('keydown', key, true); };
+  const foot = el('div', { class: 'df' });
+  for (const b of buttons) foot.append(el('button', { class: b.primary ? 'pri' : '', onclick: () => { if (b.action && b.action() === false) return; close(); } }, b.label));
+  const key = e => {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); }
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { const pb = buttons.find(b => b.primary); if (pb) { e.preventDefault(); e.stopPropagation(); if (pb.action && pb.action() === false) return; close(); } }
+  };
+  addEventListener('keydown', key, true);
+  ov.append(el('div', { class: 'dlg' }, el('div', { class: 'dt' }, title), el('div', { class: 'db' }, body), foot));
+  document.body.append(ov);
+  const f = ov.querySelector('input,select'); if (f) { f.focus(); f.select && f.select(); }
+  return close;
+}
+function promptText(title, value, cb) {
+  const inp = el('input', { value, style: 'width:260px' });
+  dialog(title, inp, [{ label: 'Cancel' }, { label: 'OK', primary: true, action: () => cb(inp.value.trim()) }]);
+}
+// ---- zoom: axes become manual; each zoom-in remembers the previous view for zoom-out
+function setView(p, x, y) {
+  pushUndo();
+  (p.zoomStack = p.zoomStack || []).push({ x: clone(p.x), y: clone(p.y) });
+  if (p.zoomStack.length > 30) p.zoomStack.shift();
+  p.x = x; if (y) p.y = y;
+  setTool('pointer');
+  recalc();
+}
+const axRange = (ax, fa, u0, u1) => {
+  let min = fa.inv(Math.min(u0, u1)), max = fa.inv(Math.max(u0, u1));
+  if (ax.scale === 'log') min = Math.max(min, 1e-3);
+  return { ...ax, min: +min.toPrecision(4), max: +max.toPrecision(4), auto: false };
+};
+function zoomIn(p, G, x0, y0, x1, y1) {
+  const hist = p.type === 'hist';
+  const xa = G.xa, ya = G.ya, sxu = (xa.t1 - xa.t0) / G.W, syu = (ya.t1 - ya.t0) / G.H;
+  const ux = d => xa.t0 + (d - G.L) * sxu, uy = d => ya.t0 + (G.T + G.H - d) * syu;
+  if (Math.abs(x1 - x0) < 5 && (hist || Math.abs(y1 - y0) < 5)) {
+    // plain click: 2× around the point
+    const cx = ux(x0), cy = uy(y0), hx = (xa.t1 - xa.t0) / 4, hy = (ya.t1 - ya.t0) / 4;
+    return setView(p, axRange(p.x, xa, cx - hx, cx + hx), hist ? null : axRange(p.y, ya, cy - hy, cy + hy));
+  }
+  if (Math.abs(x1 - x0) < 5 || (!hist && Math.abs(y1 - y0) < 5)) { setTool('pointer'); return renderAll(); }
+  setView(p, axRange(p.x, xa, ux(x0), ux(x1)), hist ? null : axRange(p.y, ya, uy(y0), uy(y1)));
+}
+function zoomOut(p, G) {
+  pushUndo();
+  setTool('pointer');
+  if (p.zoomStack && p.zoomStack.length) { const v = p.zoomStack.pop(); p.x = v.x; p.y = v.y; return recalc(); }
+  const grow = (ax, fa) => { const c = (fa.t0 + fa.t1) / 2, h = (fa.t1 - fa.t0); return axRange(ax, fa, c - h, c + h); };
+  p.x = grow(p.x, G.xa);
+  if (p.type !== 'hist') p.y = grow(p.y, G.ya);
+  recalc();
+}
+// range that fits the plotted population (0.1–99.9 % of events, 5 % padding in display space)
+function fitAxis(p, param, scale, cof) {
+  const t = activeTube(), X = t && getCol(t, param), ids = RES && RES.idx[resolvePop(p.pop)];
+  if (!X || !ids || !ids.length) return null;
+  const step = Math.max(1, Math.floor(ids.length / 50000)), v = [];
+  for (let k = 0; k < ids.length; k += step) { const x = X[ids[k]]; if (scale !== 'log' || x > 0) v.push(x); }
+  if (!v.length) return null;
+  const [lo, hi] = quantiles(Float32Array.from(v), [0.001, 0.999]);
+  const fa = axisFns({ scale, min: scale === 'log' ? Math.max(lo, 1e-3) : lo, max: Math.max(hi, lo + 1e-9), cof });
+  const pad = (fa.t1 - fa.t0) * 0.05 || 1;
+  let min = fa.inv(fa.t0 - pad), max = fa.inv(fa.t1 + pad);
+  if (scale === 'lin' && lo >= 0) min = Math.max(0, min);
+  if (scale === 'log') min = Math.max(min, 1e-3);
+  return { min: +min.toPrecision(3), max: +max.toPrecision(3) };
+}
+function axisSection(p, axis) {
+  const ax = p[axis];
+  const sc = el('select', {}, ...Object.entries(SCALES).map(([k, v]) => el('option', { value: k }, v)));
+  sc.value = ax.scale;
+  const num = v => el('input', { type: 'number', value: v, step: 'any', style: 'width:120px' });
+  const mn = num(ax.min), mx = num(ax.max), cf = num(ax.cof || 150);
+  const cofRow = [el('label', {}, 'Cofactor'), cf];
+  const upd = () => cofRow.forEach(x => x.style.display = sc.value === 'biex' ? '' : 'none');
+  sc.onchange = () => {
+    if (sc.value === 'log' && +mn.value <= 0) mn.value = Math.max(1, +mx.value / 1e4);
+    if (sc.value === 'biex' && +mn.value > 0) mn.value = -Math.round(+mx.value / 1e3);
+    upd();
+  };
+  upd();
+  const autoBtn = el('button', { style: 'grid-column:1/-1;justify-self:start', onclick: () => {
+    const r = fitAxis(p, ax.param, sc.value, +cf.value || 150);
+    if (!r) return msg('No events to fit');
+    mn.value = r.min; mx.value = r.max;
+  } }, 'Auto scale');
+  const box = el('fieldset', { style: 'border:1px solid #d5dbe2;border-radius:4px;padding:8px 12px;margin:0;min-width:260px' },
+    el('legend', { style: 'font-weight:600;padding:0 4px' }, `${axis.toUpperCase()} axis — ${paramLabel(ax.param)}`),
+    el('div', { class: 'frm' }, el('label', {}, 'Scale'), sc, el('label', {}, 'Minimum'), mn, el('label', {}, 'Maximum'), mx, ...cofRow, autoBtn));
+  const read = () => {
+    const n = { param: ax.param, scale: sc.value, min: +mn.value, max: +mx.value, cof: +cf.value || 150, auto: false };
+    if (!(n.max > n.min)) throw new Error(`${axis.toUpperCase()} axis: maximum must be greater than minimum`);
+    if (n.scale === 'log' && n.min <= 0) throw new Error(`${axis.toUpperCase()} axis: logarithmic scale needs a positive minimum`);
+    return n;
+  };
+  return { box, read };
+}
+function propsDialog(p) {
+  const secs = { x: axisSection(p, 'x') };
+  if (p.type !== 'hist') secs.y = axisSection(p, 'y');
+  const all = el('input', { type: 'checkbox' });
+  const body = el('div', {}, el('div', { style: 'display:flex;gap:12px;flex-wrap:wrap' }, ...Object.values(secs).map(s => s.box)),
+    el('label', { style: 'display:flex;gap:6px;margin-top:10px' }, all, 'Apply these axis settings to all plots using the same parameters'));
+  dialog('Plot properties', body, [{ label: 'Cancel' }, {
+    label: 'OK', primary: true, action: () => {
+      let vals;
+      try { vals = Object.fromEntries(Object.entries(secs).map(([k, s]) => [k, s.read()])); } catch (e) { alert(e.message); return false; }
+      pushUndo();
+      for (const [k, n] of Object.entries(vals)) {
+        if (all.checked) { for (const q of S.plots) for (const a of ['x', 'y']) if (q[a] && q[a].param === n.param) q[a] = { ...n }; }
+        else p[k] = n;
+      }
+      p.zoomStack = [];
+      recalc();
+    }
+  }]);
+}
+function keywordsDialog() {
+  const t = activeTube();
+  if (!t) return msg('No tube selected');
+  const f = el('input', { placeholder: 'Filter…', style: 'width:100%;margin-bottom:8px' });
+  const tbl = el('table', { class: 'kw' });
+  const fill = () => {
+    const q = f.value.toLowerCase();
+    tbl.innerHTML = Object.entries(t.kw).filter(([k, v]) => !q || k.toLowerCase().includes(q) || String(v).toLowerCase().includes(q)).map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td>${esc(String(v).slice(0, 400))}</td></tr>`).join('');
+  };
+  f.oninput = fill; fill();
+  dialog(`Keywords — ${t.fileName}`, el('div', { style: 'width:640px' }, f, el('div', { style: 'max-height:60vh;overflow:auto' }, tbl)), [{ label: 'Close', primary: true }]);
+}
+function compDialog() {
+  const t = activeTube();
+  if (!t) return msg('No tube selected');
+  let sp = t.spill ? clone(t.spill) : null;
+  const wrap = el('div');
+  const draw = () => {
+    wrap.innerHTML = '';
+    if (!sp) {
+      wrap.append(el('p', {}, 'This file has no spillover matrix ($SPILLOVER).'),
+        el('button', { onclick: () => { const fl = t.params.map(p => p.name).filter(n => !isScatter(n)); sp = { names: fl, matrix: fl.map((_, i) => fl.map((_, j) => i === j ? 1 : 0)) }; draw(); } }, 'Create empty matrix for fluorescence channels'));
+      return;
+    }
+    const tb = el('table', { class: 'mtx' });
+    const hr = el('tr', {}, el('th', {}, 'Fluorochrome → detector (%)'));
+    sp.names.forEach(n => hr.append(el('th', {}, paramLabel(n))));
+    tb.append(hr);
+    sp.names.forEach((ni, i) => {
+      const tr = el('tr', {}, el('th', {}, paramLabel(ni)));
+      sp.names.forEach((nj, j) => {
+        if (i === j) { tr.append(el('td', { class: 'diag' }, '100')); return; }
+        const inp = el('input', { type: 'number', step: '0.1', value: +(sp.matrix[i][j] * 100).toFixed(3) });
+        inp.oninput = () => { sp.matrix[i][j] = (+inp.value || 0) / 100; };
+        tr.append(el('td', {}, inp));
+      });
+      tb.append(tr);
+    });
+    wrap.append(el('p', { style: 'margin:0 0 8px;color:#55606d' }, 'Row = fluorochrome, column = detector. Values are % spillover.'), el('div', { style: 'overflow:auto;max-width:80vw' }, tb));
+  };
+  draw();
+  const apply = all => () => {
+    if (!sp) return;
+    for (const tt of all ? S.tubes : [t]) {
+      if (!sp.names.every(n => tt.cols[n])) continue;
+      tt.spill = clone(sp); computeComp(tt);
+    }
+    S.compOn = true; $('#compChk').checked = true;
+    recalc();
+  };
+  dialog(`Compensation — ${t.name}`, wrap, [{ label: 'Cancel' }, { label: 'Apply to all tubes', action: apply(true) }, { label: 'Apply', primary: true, action: apply(false) }]);
+}
+function statColDialog(panel) {
+  const t = activeTube();
+  if (!t) return msg('Load a tube first');
+  const st = el('select', {}, ...Object.entries(STATS).map(([k, v]) => el('option', { value: k }, v)));
+  const pa = el('select', {}, ...t.params.map(p => el('option', { value: p.name }, p.label)));
+  dialog('Add statistic column', el('div', { class: 'frm' }, el('label', {}, 'Statistic'), st, el('label', {}, 'Parameter'), pa),
+    [{ label: 'Cancel' }, { label: 'Add', primary: true, action: () => { pushUndo(); panel.cols.push({ stat: st.value, param: pa.value }); renderAll(); } }]);
+}
+
+// ============================================================ panels
+function createPanelWin(p) {
+  const w = makeWin(p.id, p.win);
+  w.kind = p.kind;
+  w.box = el('div', { class: 'tbl' });
+  w.body.append(w.box);
+  w.render = () => renderPanel(w);
+  w.box.addEventListener('click', e => {
+    const tw = e.target.closest('.tw'), dot = e.target.closest('.cdot'), add = e.target.closest('[data-add]'), rm = e.target.closest('[data-rmcol]');
+    const panel = getItem(w.id);
+    if (add) return statColDialog(panel);
+    if (rm) { pushUndo(); panel.cols.splice(+rm.dataset.rmcol, 1); renderAll(); return; }
+    const tr = e.target.closest('tr[data-pop]');
+    if (!tr) return;
+    const id = tr.dataset.pop;
+    if (tw) { const c = panel.collapsed; const i = c.indexOf(id); i < 0 ? c.push(id) : c.splice(i, 1); renderAll(); return; }
+    if (dot) return recolorPop(id);
+    const pop = POPMAP[id];
+    S.sel = pop && pop.gate ? pop.gate.id : null; renderAll();
+  });
+  w.box.addEventListener('dblclick', e => { const tr = e.target.closest('tr[data-pop]'); if (tr && !e.target.closest('.cdot,.tw')) renamePop(tr.dataset.pop); });
+  w.box.addEventListener('contextmenu', e => {
+    const tr = e.target.closest('tr[data-pop]');
+    e.preventDefault();
+    const items = [];
+    if (tr) items.push({ head: POPMAP[tr.dataset.pop].name }, ...popMenuItems(tr.dataset.pop), '-');
+    if (p.kind === 'stats') items.push({ label: 'Add statistic column…', action: () => statColDialog(getItem(w.id)) });
+    items.push({ label: 'Export statistics (all tubes) as CSV', action: exportCSV }, { label: 'Copy table', action: () => copyTable(w) });
+    showMenu(e.clientX, e.clientY, items);
+  });
+  return w;
+}
+function visiblePops(panel) {
+  const hidden = new Set();
+  return POPS.filter(p => { if (hidden.has(p.parentId)) { hidden.add(p.id); return false; } if (panel.collapsed.includes(p.id)) hidden.add(p.id); return true; });
+}
+function renderPanel(w) {
+  const panel = getItem(w.id);
+  if (!panel) return;
+  const t = activeTube(), tot = t ? t.n : 0;
+  w.title.textContent = panel.kind === 'hier' ? 'Population Hierarchy' : 'Statistics';
+  const selPops = new Set(POPS.filter(p => p.gate && p.gate.id === S.sel).map(p => p.id));
+  const hd = `<div class="hd"><span>Tube Name: <b>${esc(t ? t.name : '—')}</b></span><span>Sample ID: ${esc(t ? t.sampleId : '')}</span>${panel.kind === 'stats' ? '<span style="margin-left:auto"><button class="sbtn" data-add>+ Statistic</button></span>' : ''}</div>`;
+  const dot = p => `<span class="cdot${p.paint ? ' paint' : ''}" style="background:${p.color};color:${p.color}" title="Change color"></span>`;
+  let rows = '';
+  if (panel.kind === 'hier') {
+    const hasKids = new Set(POPS.map(p => p.parentId));
+    for (const p of visiblePops(panel)) {
+      const n = popCount(p.id), par = p.parentId ? popCount(p.parentId) : n;
+      const tw = hasKids.has(p.id) ? `<span class="tw">${panel.collapsed.includes(p.id) ? '▸' : '▾'}</span>` : '<span class="tw"></span>';
+      rows += `<tr data-pop="${p.id}" class="${selPops.has(p.id) ? 'sel' : ''}"><td style="padding-left:${4 + p.depth * 16}px">${tw}${p.gate ? dot(p) : '<span class="cdot" style="background:#222"></span>'}${esc(p.name)}</td><td class="n">${t ? n.toLocaleString() : ''}</td><td class="n">${t ? pct(n, tot) : ''}</td><td class="n">${t ? pct(n, par) : ''}</td></tr>`;
+    }
+    w.box.innerHTML = hd + `<table><tr><th>Population</th><th>Events</th><th>% Total</th><th>% Parent</th></tr>${rows}</table>`;
+  } else {
+    const cols = panel.cols;
+    for (const p of POPS) {
+      const n = popCount(p.id), par = p.parentId ? popCount(p.parentId) : n;
+      const sc = cols.map(c => `<td class="n">${t && RES ? fmtVal(popStat(t, RES.idx[p.id], c.stat, c.param)) : ''}</td>`).join('');
+      rows += `<tr data-pop="${p.id}" class="${selPops.has(p.id) ? 'sel' : ''}"><td>${p.gate ? dot(p) : '<span class="cdot" style="background:#222"></span>'}${esc(p.name)}</td><td class="n">${t ? n.toLocaleString() : ''}</td><td class="n">${t ? pct(n, par) : ''}</td><td class="n">${t ? pct(n, tot) : ''}</td>${sc}</tr>`;
+    }
+    const ch = cols.map((c, i) => `<th>${STATS[c.stat]} ${esc(paramLabel(c.param))} <span data-rmcol="${i}" style="cursor:pointer;color:#c33" title="Remove column">×</span></th>`).join('');
+    w.box.innerHTML = hd + `<table><tr><th>Population</th><th>Events</th><th>% Parent</th><th>% Total</th>${ch}</tr>${rows}</table>`;
+  }
+}
+function copyTable(w) {
+  const rows = [...w.box.querySelectorAll('tr')].map(tr => [...tr.children].map(td => td.textContent.replace('×', '').trim()).join('\t'));
+  navigator.clipboard.writeText(rows.join('\n')).then(() => msg('Table copied'), () => msg('Clipboard not available'));
+}
+
+// ============================================================ exports
+function exportCSV() {
+  if (!S.tubes.length) return msg('No tubes loaded');
+  const stp = S.panels.find(p => p.kind === 'stats'), cols = stp ? stp.cols : [];
+  const head = ['Tube', 'File', 'Population', 'Parent', 'Events', '% Parent', '% Total', ...cols.map(c => `${STATS[c.stat]} ${paramLabel(c.param)}`)];
+  const lines = [head];
+  for (const t of S.tubes) {
+    const { pops, map } = buildPops(t.gates), idx = computeTube(t, pops);
+    for (const p of pops) {
+      const n = idx[p.id] ? idx[p.id].length : 0, par = p.parentId ? idx[p.parentId].length : n;
+      lines.push([t.name, t.fileName, p.name, p.parentId ? map[p.parentId].name : '', n, par ? (n / par * 100).toFixed(2) : '', (n / t.n * 100).toFixed(2), ...cols.map(c => { const v = popStat(t, idx[p.id], c.stat, c.param); return isFinite(v) ? v.toPrecision(6) : ''; })]);
+    }
+  }
+  const csv = lines.map(r => r.map(v => { v = String(v); return /[",;\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')).join('\r\n');
+  download('flowdesk_statistics.csv', '﻿' + csv, 'text/csv');
+}
+function plotCanvasWithTitle(p) {
+  const w = WIN[p.id], dpr = window.devicePixelRatio || 1;
+  const c = document.createElement('canvas'), th = Math.round(20 * dpr);
+  c.width = w.cv.width; c.height = w.cv.height + th;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = '#000'; x.font = `${11 * dpr}px system-ui`; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(w.title.textContent, c.width / 2, th / 2);
+  x.drawImage(w.cv, 0, th);
+  x.font = `${11 * dpr}px system-ui`; x.textBaseline = 'alphabetic';
+  x.fillText(w.xl.textContent, (w.G.L + w.G.W / 2) * dpr, c.height - 4 * dpr);
+  x.save(); x.translate(11 * dpr, th + (w.G.T + w.G.H / 2) * dpr); x.rotate(-Math.PI / 2); x.fillText(w.yl.textContent, 0, 0); x.restore();
+  return c;
+}
+function exportPlotPNG(p) {
+  plotCanvasWithTitle(p).toBlob(b => download(`${WIN[p.id].title.textContent.replace(/[^\w\-+ ]+/g, '_')}.png`, b));
+}
+function exportLayoutPNG() {
+  if (!S.plots.length) return msg('No plots');
+  const dpr = window.devicePixelRatio || 1;
+  let r = 0, b = 0;
+  for (const p of S.plots) { r = Math.max(r, p.win.x + p.win.w); b = Math.max(b, p.win.y + p.win.h); }
+  const c = document.createElement('canvas');
+  c.width = (r + 10) * dpr; c.height = (b + 10) * dpr;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+  for (const p of S.plots) { const pc = plotCanvasWithTitle(p); x.drawImage(pc, p.win.x * dpr, p.win.y * dpr); x.strokeStyle = '#999'; x.strokeRect(p.win.x * dpr, p.win.y * dpr, pc.width, pc.height); }
+  const t = activeTube();
+  c.toBlob(bl => download(`${t ? t.name : 'layout'}_plots.png`, bl));
+}
+function exportPopFCS(popId) {
+  const t = activeTube();
+  if (!t || !RES) return;
+  const ids = RES.idx[popId];
+  if (!ids || !ids.length) return msg('Population is empty');
+  const name = POPMAP[popId].name;
+  download(`${t.name}_${name}.fcs`.replace(/[\\/:*?"<>|]+/g, '_'), buildFCS(t, ids, name));
+  msg(`Exported ${ids.length.toLocaleString()} events (uncompensated values)`);
+}
+
+// ============================================================ tubes / side panel
+async function openFiles(files) {
+  const added = [];
+  for (const f of files) {
+    try {
+      const t = parseFCS(await f.arrayBuffer(), f.name);
+      computeComp(t);
+      t.gates = newTubeGates();
+      S.tubes.push(t); added.push(t);
+    } catch (e) { alert(`${f.name}: ${e.message}`); }
+  }
+  if (!added.length) return;
+  msg(`Loaded ${added.length} file(s)`);
+  if (!activeTube()) S.active = added[0].id;
+  afterLoad();
+}
+function openBuffer(buf, name) {
+  const t = parseFCS(buf, name);
+  computeComp(t);
+  t.gates = newTubeGates();
+  S.tubes.push(t);
+  if (!activeTube()) S.active = t.id;
+  afterLoad();
+  return t;
+}
+// desktop build (Electron) uses the native file dialog; the browser uses the hidden file input
+function openPicker() { if (window.flowdesk) window.flowdesk.openDialog(); else $('#fileIn').click(); }
+function afterLoad() {
+  fitWorkspace();
+  if (!S.plots.length && !S.panels.length) defaultLayout();
+  else { refreshAutoAxes(); recalc(); }
+}
+function defaultLayout() {
+  const t = activeTube();
+  const names = t.params.map(p => p.name);
+  rebuildPops();
+  addPlot('density', 'all');
+  if (names.includes('FSC-H') && names.includes('FSC-A')) addPlot('dot', 'all', 'FSC-A', 'FSC-H');
+  const fl = names.filter(n => !isScatter(n));
+  if (fl.length >= 2) addPlot('dot', 'all', fl[0], fl[1]);
+  addPanel('hier'); addPanel('stats');
+  UNDO.length = 0;
+  recalc();
+}
+// axes the user never set by hand follow each tube's own range (instruments differ widely)
+function refreshAutoAxes() {
+  if (!activeTube()) return;
+  for (const p of S.plots) for (const a of ['x', 'y']) if (p[a] && p[a].auto) p[a] = { param: p[a].param, ...defaultAxis(p[a].param) };
+}
+// each tube remembers its own view of every plot (population, axes, zoom);
+// a tube seen for the first time starts from the current view
+const VIEW_KEYS = ['pop', 'x', 'y', 'zoomStack'];
+function selectTube(id) {
+  if (id === S.active) return;
+  const fresh = [];
+  for (const p of S.plots) {
+    p.views = p.views || {};
+    if (S.active) p.views[S.active] = clone(Object.fromEntries(VIEW_KEYS.map(k => [k, p[k]])));
+    const v = p.views[id];
+    if (v) VIEW_KEYS.forEach(k => p[k] = clone(v[k] ?? (k === 'zoomStack' ? [] : p[k])));
+    else fresh.push(p);
+  }
+  S.active = id;
+  for (const p of fresh) for (const a of ['x', 'y']) if (p[a] && p[a].auto) p[a] = { param: p[a].param, ...defaultAxis(p[a].param) };
+  S.sel = null;
+  recalc();
+}
+function removeTube(id) {
+  S.tubes = S.tubes.filter(t => t.id !== id);
+  if (S.active === id) S.active = S.tubes[0] ? S.tubes[0].id : null;
+  fitWorkspace(); recalc();
+}
+function renderSide() {
+  document.querySelectorAll('.tb[data-panel]').forEach(b => b.classList.toggle('on', S.panels.some(p => p.kind === b.dataset.panel)));
+  const t = activeTube();
+  $('#tubes').innerHTML = S.tubes.map(x => `<div class="trow${x.id === S.active ? ' on' : ''}" data-id="${x.id}"><span class="dot"></span><span class="tn" title="${esc(x.fileName)}">${esc(x.name)}<div class="ts">${esc(x.sampleId || x.fileName)}</div></span><span class="ts">${x.n.toLocaleString()}</span></div>`).join('') || '<div style="padding:10px;color:#8a95a1">No tubes. Drag .fcs files onto the workspace.</div>';
+  const kw = t ? t.kw : {};
+  const rows = t ? [['File', t.fileName], ['Events', t.n.toLocaleString()], ['Parameters', t.params.length], ['Cytometer', kw['$CYT'] || ''], ['Date', [kw['$DATE'], kw['$BTIM']].filter(Boolean).join(' ')], ['Version', kw['FCSVERSION']], ['Compensation', t.spill ? `${t.spill.names.length}×${t.spill.names.length} matrix` : 'none in file']] : [['', 'No tube selected']];
+  $('#info').innerHTML = '<table>' + rows.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('') + '</table>';
+  $('#stTube').textContent = t ? `${t.name} — ${t.n.toLocaleString()} events` : 'No tube';
+}
+
+// ============================================================ demo data
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const DEMO_P = [['FSC-A', ''], ['FSC-H', ''], ['SSC-A', ''], ['KO525-A', 'CD45'], ['APC-A750-A', 'CD3'], ['APC-A', 'CD4'], ['APC-A700-A', 'CD8'], ['PB450-A', 'CD57'], ['PC5.5-A', 'PD-1'], ['PC7-A', 'CD27'], ['ECD-A', 'CD28'], ['PE-A', 'CCR7'], ['FITC-A', 'CD45RA'], ['Time', '']];
+function makeDemoTube(name, seed, n, shift = 0) {
+  const R = mulberry(seed);
+  const gauss = () => { let u = 0, v = 0; while (!u) u = R(); v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const pick = (...w) => { let r = R(), s = 0; for (let i = 0; i < w.length; i++) { s += w[i]; if (r < s) return i; } return w.length - 1; };
+  const FL = DEMO_P.slice(3, 13).map(p => p[0]);
+  const spillPairs = { 'FITC-A': { 'PE-A': 0.14 }, 'PE-A': { 'ECD-A': 0.22, 'PC5.5-A': 0.04 }, 'ECD-A': { 'PC5.5-A': 0.18 }, 'PC5.5-A': { 'PC7-A': 0.09 }, 'APC-A': { 'APC-A700-A': 0.11 }, 'APC-A700-A': { 'APC-A750-A': 0.12 }, 'PB450-A': { 'KO525-A': 0.13 } };
+  const M = FL.map(a => FL.map(b => a === b ? 1 : (spillPairs[a] && spillPairs[a][b]) || 0));
+  const cols = {};
+  DEMO_P.forEach(([p]) => cols[p] = new Float32Array(n));
+  const neg = () => Math.pow(10, 2.1 + gauss() * 0.3);
+  const pos = (m, s = 0.15) => Math.pow(10, m + gauss() * s);
+  const sc = (m, s) => Math.max(500, m + gauss() * s);
+  const f = {};
+  for (let i = 0; i < n; i++) {
+    for (const k of FL) f[k] = neg();
+    let fsc, ssc;
+    const type = pick(0.08, 0.33, 0.10, 0.49);
+    if (type === 0) { fsc = Math.abs(55e3 + gauss() * 30e3); ssc = Math.abs(40e3 + gauss() * 30e3); f['KO525-A'] = pos(2.6, 0.5); }
+    else if (type === 1) { fsc = sc(470e3, 55e3); ssc = sc(500e3, 75e3); f['KO525-A'] = pos(4.3); }
+    else if (type === 2) { fsc = sc(410e3, 45e3); ssc = sc(220e3, 35e3); f['KO525-A'] = pos(4.7); f['APC-A'] = pos(3.7, 0.2); }
+    else {
+      fsc = sc(270e3, 28e3); ssc = sc(70e3, 16e3); f['KO525-A'] = pos(5.0);
+      if (R() < 0.72) {
+        f['APC-A750-A'] = pos(4.9);
+        const sub = pick(0.64 + shift, 0.30 - shift, 0.06);
+        if (sub === 0) f['APC-A'] = pos(4.6); else if (sub === 1) f['APC-A700-A'] = pos(4.9);
+        if (R() < (sub === 1 ? 0.3 : 0.03)) f['PB450-A'] = pos(4.3);
+        if (R() < 0.1 + shift) f['PC5.5-A'] = pos(4.0, 0.25);
+        const cc = sub === 1 ? pick(0.6, 0.1, 0.3) : pick(0.85, 0.12, 0.03);
+        if (cc === 0) { f['PC7-A'] = pos(4.4); f['ECD-A'] = pos(4.3); } else if (cc === 1) f['ECD-A'] = pos(4.3);
+        const mm = pick(0.3, 0.45, 0.22, 0.03);
+        if (mm === 0 || mm === 1) f['PE-A'] = pos(4.2);
+        if (mm === 0 || mm === 3) f['FITC-A'] = pos(4.3);
+      } else { f['FITC-A'] = pos(4.0); if (R() < 0.3) f['PB450-A'] = pos(4.0); }
+    }
+    let fsch = fsc * (0.82 + gauss() * 0.025);
+    if (R() < 0.04) { fsc *= 1.8; fsch = fsc * (0.5 + gauss() * 0.03); }
+    cols['FSC-A'][i] = fsc; cols['FSC-H'][i] = fsch; cols['SSC-A'][i] = ssc;
+    for (let j = 0; j < FL.length; j++) { let v = 0; for (let k = 0; k < FL.length; k++) v += f[FL[k]] * M[k][j]; cols[FL[j]][i] = v + gauss() * 60; }
+    cols['Time'][i] = i / n * 600;
+  }
+  const params = DEMO_P.map(([p, s]) => ({ name: p, stain: s, label: s ? `${s} ${p}` : p, range: p === 'Time' ? 1024 : 1048576 }));
+  const kw = { '$CYT': 'Demo cytometer', '$DATE': '03-NOV-2026', '$BTIM': '10:00:00', FCSVERSION: 'demo', '$TOT': String(n), '$PAR': String(params.length) };
+  params.forEach((p, j) => { kw[`$P${j + 1}N`] = p.name; if (p.stain) kw[`$P${j + 1}S`] = p.stain; kw[`$P${j + 1}R`] = String(p.range); });
+  kw['$SPILLOVER'] = [FL.length, ...FL, ...M.flat()].join(',');
+  return { id: uid('t'), name, fileName: name + '.fcs', kw, params, cols, n, spill: { names: FL, matrix: M }, comp: null, gates: [], sampleId: 'DEMO-' + seed, date: kw['$DATE'] };
+}
+function loadDemo() {
+  const a = makeDemoTube('Healthy ctrl', 11, 100000), b = makeDemoTube('Patient 01', 23, 100000, 0.08);
+  [a, b].forEach(t => { computeComp(t); t.gates = newTubeGates(); S.tubes.push(t); });
+  S.active = a.id;
+  if (S.plots.length || S.panels.length) { afterLoad(); return; }
+  const scat = { scale: 'lin', min: 0, max: 800000, cof: 150 }, lg = { scale: 'log', min: 100, max: 1048576, cof: 150 };
+  const ax = (param, a) => ({ param, ...a });
+  const L = 10 ** 3;
+  const gid = {}, G = (key, o) => { const g = { id: uid('g'), paint: false, ...o }; gid[key] = g.id; S.gates.push(g); return g; };
+  G('P1', { name: 'P1', type: 'poly', parentId: 'all', x: 'FSC-A', y: 'SSC-A', xAx: scat, yAx: scat, color: '#e0242a', pts: [[110e3, -8e3], [810e3, -8e3], [810e3, 810e3], [170e3, 810e3], [110e3, 120e3]] });
+  G('S', { name: 'Singlets', type: 'poly', parentId: gid.P1, x: 'FSC-A', y: 'FSC-H', xAx: scat, yAx: scat, color: '#222222', pts: [[100e3, 70e3], [810e3, 567e3], [810e3, 770e3], [100e3, 95e3]] });
+  G('Leu', { name: 'Leukocytes', type: 'rect', parentId: gid.S, x: 'KO525-A', y: 'SSC-A', xAx: lg, yAx: scat, color: '#e7298a', pts: [[10 ** 3.4, -8e3], [1.2e6, 810e3]] });
+  G('Ly', { name: 'Lymphocytes', type: 'rect', parentId: gid.S, x: 'KO525-A', y: 'SSC-A', xAx: lg, yAx: scat, color: '#1a8a2e', pts: [[10 ** 4.55, -8e3], [1.2e6, 150e3]] });
+  G('CD3', { name: 'CD3+', type: 'rect', parentId: gid.Ly, x: 'APC-A750-A', y: 'SSC-A', xAx: lg, yAx: scat, color: '#17a2c8', pts: [[1e4, -8e3], [1.2e6, 300e3]] });
+  G('CD4', { name: 'CD4+', type: 'rect', parentId: gid.CD3, x: 'APC-A', y: 'APC-A700-A', xAx: lg, yAx: lg, color: '#e0242a', pts: [[10 ** 3.8, 50], [1.2e6, 10 ** 3.6]] });
+  G('CD8', { name: 'CD8+', type: 'rect', parentId: gid.CD3, x: 'APC-A', y: 'APC-A700-A', xAx: lg, yAx: lg, color: '#17becf', pts: [[50, 1e4], [10 ** 3.4, 1.2e6]] });
+  G('CD57', { name: 'CD57+', type: 'rect', parentId: gid.CD4, x: 'PB450-A', y: 'SSC-A', xAx: lg, yAx: scat, color: '#4a0f57', pts: [[10 ** 3.5, -8e3], [1.2e6, 300e3]] });
+  G('PD1', { name: 'PD-1+', type: 'interval', parentId: gid.CD4, x: 'PC5.5-A', y: null, xAx: lg, yAx: null, color: '#1a8a2e', pts: [[10 ** 3.4, 0], [1.2e6, 0]], barY: 0.3 });
+  G('Q1', { name: 'Q1', type: 'quad', parentId: gid.CD4, x: 'PC7-A', y: 'ECD-A', xAx: lg, yAx: lg, color: '#222', pts: [[10 ** 3.5, 10 ** 3.4]], qnames: { UL: 'CD27-CD28+', UR: 'CD27+CD28+', LL: 'CD27-CD28-', LR: 'CD27+CD28-' }, qcolors: { UL: '#1f77b4', UR: '#e0242a', LL: '#555555', LR: '#2ca02c' }, qpaint: {} });
+  G('Q2', { name: 'Q2', type: 'quad', parentId: gid.CD4, x: 'FITC-A', y: 'PE-A', xAx: lg, yAx: lg, color: '#222', pts: [[10 ** 3.4, 10 ** 3.3]], qnames: { UL: 'Central Memory', UR: 'Naive', LL: 'Effector Memory', LR: 'Effector' }, qcolors: { UL: '#1f77b4', UR: '#e0242a', LL: '#555555', LR: '#2ca02c' }, qpaint: {} });
+  const cw = 250, chh = 240, g = 8, cell = (c, r, w = 1) => ({ x: g + c * (cw + g), y: g + r * (chh + g), w: w * cw + (w - 1) * g, h: chh });
+  const P = (type, pop, x, y, win) => S.plots.push({ id: uid('p'), type, pop, x, y, dot: 1, win });
+  P('density', 'all', ax('FSC-A', scat), ax('SSC-A', scat), cell(0, 0));
+  P('dot', gid.P1, ax('FSC-A', scat), ax('FSC-H', scat), cell(1, 0));
+  P('dot', gid.S, ax('KO525-A', lg), ax('SSC-A', scat), cell(2, 0));
+  P('dot', gid.Ly, ax('APC-A750-A', lg), ax('SSC-A', scat), cell(3, 0));
+  P('dot', gid.CD3, ax('APC-A', lg), ax('APC-A700-A', lg), cell(4, 0));
+  S.panels.push({ id: uid('w'), kind: 'hier', cols: [], collapsed: [], win: cell(0, 1, 2) });
+  S.panels.push({ id: uid('w'), kind: 'stats', cols: [{ stat: 'median', param: 'PC5.5-A' }], collapsed: [], win: cell(2, 1, 2) });
+  P('dot', gid.CD4, ax('PB450-A', lg), ax('SSC-A', scat), cell(4, 1));
+  P('hist', gid.CD4, ax('PC5.5-A', lg), ax('SSC-A', scat), cell(0, 2));
+  P('dot', gid.CD4, ax('PC7-A', lg), ax('ECD-A', lg), cell(1, 2));
+  P('dot', gid.CD4, ax('FITC-A', lg), ax('PE-A', lg), cell(2, 2));
+  b.gates = clone(a.gates);
+  rebuildWindows(); recalc();
+  msg('Demo loaded: 2 tubes, 100,000 events each');
+}
+
+// ============================================================ chrome: menubar, toolbar, keys
+const ICONS = {
+  open: '<path d="M3 6h5l2 2h9v10H3z"/>',
+  pointer: '<path d="M6 3l12 9-5 1 3 6-2 1-3-6-4 4z"/>',
+  rect: '<rect x="4" y="5" width="16" height="13"/>',
+  poly: '<path d="M5 18l2-11 7-3 6 7-4 8z"/>',
+  ellipse: '<ellipse cx="12" cy="12" rx="8" ry="6"/>',
+  quad: '<path d="M12 3v18M3 12h18"/><rect x="3" y="3" width="18" height="18"/>',
+  interval: '<path d="M4 12h16M4 8v8M20 8v8"/>',
+  zoomin: '<circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20M7.5 10h5M10 7.5v5"/>',
+  zoomout: '<circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20M7.5 10h5"/>',
+  dot: '<path d="M4 4v16h16"/><circle cx="9" cy="14" r=".6"/><circle cx="11" cy="11" r=".6"/><circle cx="14" cy="9" r=".6"/><circle cx="16" cy="12" r=".6"/><circle cx="12" cy="15" r=".6"/><circle cx="17" cy="7" r=".6"/>',
+  density: '<path d="M4 4v16h16"/><rect x="8" y="8" width="3" height="3"/><rect x="11" y="11" width="3" height="3"/><rect x="14" y="8" width="3" height="3"/><rect x="11" y="5" width="3" height="3"/>',
+  pseudo: '<path d="M4 4v16h16"/><circle cx="13" cy="11" r="4.5" stroke-dasharray="1.2 1.6"/><circle cx="13" cy="11" r="1.6" fill="currentColor"/>',
+  contour: '<path d="M4 4v16h16"/><ellipse cx="13" cy="11" rx="6" ry="4.5"/><ellipse cx="13" cy="11" rx="3.4" ry="2.4"/><ellipse cx="13" cy="11" rx="1.2" ry=".8"/>',
+  hist: '<path d="M4 4v16h16"/><path d="M6 20v-4h3v-6h3v-4h3v8h3v6"/>',
+  hier: '<path d="M5 4v14M5 8h5M5 13h5M10 13v5h5M5 18h0"/><rect x="10" y="6" width="9" height="4"/><rect x="15" y="16" width="5" height="4"/>',
+  stats: '<rect x="3" y="4" width="18" height="16"/><path d="M3 9h18M3 14h18M10 4v16"/>',
+  tile: '<rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/>',
+  undo: '<path d="M9 5L4 10l5 5"/><path d="M4 10h10.5a5 5 0 010 10H10"/>',
+  redo: '<path d="M15 5l5 5-5 5"/><path d="M20 10H9.5a5 5 0 000 10H14"/>',
+  png: '<rect x="3" y="5" width="18" height="14"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/>',
+  csv: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 15h7M9 18h4"/>',
+};
+const ico = n => `<svg viewBox="0 0 24 24">${ICONS[n]}</svg>`;
+function buildToolbar() {
+  const tb = $('#toolbar');
+  const add = (icon, title, fn, tool) => { const b = el('button', { class: 'tb', title: keyLabel(title), html: ico(icon) }); if (tool) b.dataset.tool = tool; b.onclick = fn; tb.append(b); return b; };
+  const sep = () => tb.append(el('div', { class: 'tsep' }));
+  add('open', 'Open FCS files (Ctrl+O)', () => openPicker());
+  sep();
+  add('pointer', 'Select / edit gates (V)', () => setTool('pointer'), 'pointer');
+  add('rect', 'Rectangle gate (R)', () => setTool('rect'), 'rect');
+  add('poly', 'Polygon gate (P)', () => setTool('poly'), 'poly');
+  add('ellipse', 'Ellipse gate (E)', () => setTool('ellipse'), 'ellipse');
+  add('quad', 'Quadrant gate (Q)', () => setTool('quad'), 'quad');
+  add('interval', 'Interval gate for histograms (I)', () => setTool('interval'), 'interval');
+  add('zoomin', 'Zoom in: drag a box on a plot (Z)', () => setTool('zoomin'), 'zoomin');
+  add('zoomout', 'Zoom out: click a plot (X)', () => setTool('zoomout'), 'zoomout');
+  sep();
+  add('dot', 'New dot plot', () => addPlot('dot', selectedPop()));
+  add('density', 'New density plot', () => addPlot('density', selectedPop()));
+  add('pseudo', 'New pseudocolor plot', () => addPlot('pseudo', selectedPop()));
+  add('contour', 'New contour plot', () => addPlot('contour', selectedPop()));
+  add('hist', 'New histogram', () => addPlot('hist', selectedPop()));
+  add('hier', 'Show/hide population hierarchy', () => togglePanel('hier')).dataset.panel = 'hier';
+  add('stats', 'Show/hide statistics table', () => togglePanel('stats')).dataset.panel = 'stats';
+  sep();
+  add('tile', 'Arrange windows', tileWindows);
+  add('undo', 'Undo (Ctrl+Z)', undo);
+  add('redo', 'Redo (Ctrl+Y)', redo);
+  sep();
+  add('png', 'Export all plots as PNG', exportLayoutPNG);
+  add('csv', 'Export statistics of all tubes (CSV)', exportCSV);
+}
+function selectedPop() { const g = S.gates.find(q => q.id === S.sel); return g ? popIdsOf(g)[0] : 'all'; }
+const MENUS = {
+  File: () => [
+    { label: 'Open FCS files…', key: 'Ctrl+O', action: () => openPicker() },
+    { label: 'Load demo data', action: loadDemo },
+    '-',
+    { label: 'Open experiment template…', action: () => $('#expIn').click() },
+    { label: 'Save experiment template…', key: 'Ctrl+S', action: () => download('experiment.flowdesk.json', experimentJSON(), 'application/json') },
+    '-',
+    { label: 'Export statistics (all tubes, CSV)', action: exportCSV },
+    { label: 'Export all plots as PNG', action: exportLayoutPNG },
+    '-',
+    { label: 'Remove current tube', disabled: !activeTube(), action: () => removeTube(S.active) },
+    { label: 'Clear workspace (keep tubes)', action: () => { pushUndo(); S.tubes.forEach(t => t.gates = []); S.looseGates = []; S.template = null; S.plots = []; S.panels = []; rebuildWindows(); if (activeTube()) defaultLayout(); else recalc(); } },
+  ],
+  Edit: () => [
+    { label: 'Undo', key: 'Ctrl+Z', disabled: !UNDO.length, action: undo },
+    { label: 'Redo', key: 'Ctrl+Y', disabled: !REDO.length, action: redo },
+    '-',
+    { label: 'Delete selected gate', key: 'Del', disabled: !S.sel, action: () => deleteGate(S.sel) },
+  ],
+  Plot: () => [
+    { label: 'New dot plot', action: () => addPlot('dot', selectedPop()) },
+    { label: 'New density plot', action: () => addPlot('density', selectedPop()) },
+    { label: 'New pseudocolor plot', action: () => addPlot('pseudo', selectedPop()) },
+    { label: 'New contour plot', action: () => addPlot('contour', selectedPop()) },
+    { label: 'New histogram', action: () => addPlot('hist', selectedPop()) },
+    '-',
+    { label: 'Population hierarchy', checked: S.panels.some(p => p.kind === 'hier'), action: () => togglePanel('hier') },
+    { label: 'Statistics table', checked: S.panels.some(p => p.kind === 'stats'), action: () => togglePanel('stats') },
+    '-',
+    { label: 'Arrange windows', action: tileWindows },
+  ],
+  Gate: () => Object.entries(TOOLS).map(([k, v]) => ({ label: v, checked: S.tool === k, key: { pointer: 'V', rect: 'R', poly: 'P', ellipse: 'E', quad: 'Q', interval: 'I', zoomin: 'Z', zoomout: 'X' }[k], action: () => setTool(k) })),
+  Compensation: () => [
+    { label: 'Apply compensation', checked: S.compOn, action: () => { S.compOn = !S.compOn; $('#compChk').checked = S.compOn; recalc(); } },
+    { label: 'Edit matrix…', action: compDialog },
+  ],
+  Tube: () => S.tubes.length ? S.tubes.map(t => ({ label: t.name, checked: t.id === S.active, action: () => selectTube(t.id) })) : [{ label: 'No tubes', disabled: true }],
+  Help: () => [{ label: 'Quick guide…', action: helpDialog }],
+};
+function buildMenubar() {
+  const mb = $('#menubar');
+  for (const name in MENUS) {
+    const m = el('div', { class: 'mb' }, name);
+    const open = () => { closeMenus(); m.classList.add('open'); const r = m.getBoundingClientRect(); showMenu(r.left, r.bottom, MENUS[name]()); };
+    m.addEventListener('pointerdown', e => { e.preventDefault(); m.classList.contains('open') ? closeMenus() : open(); });
+    m.addEventListener('mouseenter', () => { if (document.querySelector('#menubar .mb.open') && !m.classList.contains('open')) open(); });
+    mb.append(m);
+  }
+  mb.append(el('div', { class: 'brand' }, 'FlowDesk'));
+}
+function helpDialog() {
+  dialog('Quick guide', el('div', { style: 'max-width:560px;line-height:1.55', html: `
+<b>Files.</b> Drag .fcs/.lmd files onto the workspace or use File → Open. Click a tube on the left to switch; every plot and gate updates for that tube.<br>
+<b>Plots.</b> Click an axis label to change its parameter (the last menu item opens scale/range). Click a plot title to choose which population it shows. Right-click a plot for type, axes, export.<br>
+<b>Gates.</b> Pick a tool (R rectangle, P polygon, E ellipse, Q quadrant, I interval for histograms) and draw on a plot. The gate becomes a child of the plot's population.<br>
+<b>Editing.</b> With the pointer (V) drag a gate to move it, drag its white handles to move single points, or the blue corner handles of a polygon to resize the whole gate (Shift keeps proportions, Alt scales from the centre). Double-click a gate label to rename; double-click inside a gate to open a new plot of that population. Del deletes the selected gate. Ctrl+Z / Ctrl+Y undo/redo.<br>
+<b>Hierarchy & statistics.</b> Click the color dot to change a gate color; right-click for more (paint events in gate color, export population as FCS). Add Mean/Median/CV… columns in the Statistics table.<br>
+<b>Templates.</b> File → Save experiment template stores gates, plots and layout; open it later and drop in new files.<br>
+<b>Per-tube gates.</b> Each tube keeps its own gates. Right-click a gate → Apply to all tubes / Apply to tubes… to copy it (with its parent gates) to other samples.` }), [{ label: 'Close', primary: true }]);
+}
+addEventListener('keydown', e => {
+  if (e.target.closest('input,select,textarea') || document.querySelector('.ovl')) return;
+  const k = e.key.toLowerCase(), mod = e.ctrlKey || e.metaKey;
+  if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (mod && k === 'y') { e.preventDefault(); redo(); return; }
+  if (mod && k === 'o') { e.preventDefault(); openPicker(); return; }
+  if (mod && k === 's') { e.preventDefault(); download('experiment.flowdesk.json', experimentJSON(), 'application/json'); return; }
+  if (mod) return;
+  if (e.key === 'Escape') { IA = null; closeMenus(); setTool('pointer'); return; }
+  if (e.key === 'Enter' && IA && IA.kind === 'poly') { finishPoly(IA.w); return; }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && S.sel) { deleteGate(S.sel); return; }
+  const map = { v: 'pointer', r: 'rect', p: 'poly', e: 'ellipse', q: 'quad', i: 'interval', z: 'zoomin', x: 'zoomout' };
+  if (map[k]) setTool(map[k]);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    const i = S.tubes.findIndex(t => t.id === S.active), j = clamp(i + (e.key === 'ArrowDown' ? 1 : -1), 0, S.tubes.length - 1);
+    if (S.tubes[j] && j !== i) { e.preventDefault(); selectTube(S.tubes[j].id); }
+  }
+});
+
+// ============================================================ init
+function init() {
+  buildMenubar(); buildToolbar(); setTool('pointer');
+  $('#fileIn').onchange = e => { openFiles([...e.target.files]); e.target.value = ''; };
+  $('#expIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { loadExperiment(JSON.parse(await f.text())); msg('Experiment template loaded'); } catch (err) { alert(err.message); } };
+  $('#tOpen').onclick = $('#eOpen').onclick = () => openPicker();
+  $('#eDemo').onclick = loadDemo;
+  $('#tKw').onclick = keywordsDialog;
+  $('#compBtn').onclick = compDialog;
+  $('#evDisp').onchange = e => { const n = parseInt(e.target.value.replace(/\D/g, ''), 10); S.maxEv = n > 0 ? n : 0; e.target.value = S.maxEv ? S.maxEv.toLocaleString() : ''; renderAll(); };
+  $('#compChk').onchange = e => { S.compOn = e.target.checked; recalc(); };
+  $('#tubes').addEventListener('click', e => { const r = e.target.closest('.trow'); if (r) selectTube(r.dataset.id); });
+  $('#tubes').addEventListener('contextmenu', e => {
+    const r = e.target.closest('.trow'); if (!r) return; e.preventDefault();
+    const t = S.tubes.find(x => x.id === r.dataset.id);
+    showMenu(e.clientX, e.clientY, [
+      { label: 'Rename…', action: () => promptText('Rename tube', t.name, v => { if (v) { t.name = v; renderAll(); } }) },
+      { label: 'Keywords…', action: () => { selectTube(t.id); keywordsDialog(); } },
+      { label: 'Remove', action: () => removeTube(t.id) },
+    ]);
+  });
+  $('#ws').addEventListener('pointerdown', e => { if (e.target.id === 'ws' || e.target.id === 'wsInner') { S.sel = null; setActiveWin(null); renderAll(); } });
+  let dc = 0;
+  addEventListener('dragenter', e => { e.preventDefault(); dc++; document.body.classList.add('drag'); });
+  addEventListener('dragleave', () => { if (--dc <= 0) { dc = 0; document.body.classList.remove('drag'); } });
+  addEventListener('dragover', e => e.preventDefault());
+  addEventListener('drop', e => {
+    e.preventDefault(); dc = 0; document.body.classList.remove('drag');
+    const files = [...e.dataTransfer.files];
+    const json = files.find(f => /\.json$/i.test(f.name));
+    if (json) json.text().then(s => { try { loadExperiment(JSON.parse(s)); } catch (err) { alert(err.message); } });
+    const fcs = files.filter(f => !/\.json$/i.test(f.name));
+    if (fcs.length) openFiles(fcs);
+  });
+  // start clean every launch; earlier builds kept the last layout here
+  try { localStorage.removeItem('flowdesk.layout'); } catch (e) { }
+  $('#compChk').checked = S.compOn;
+  rebuildWindows(); recalc();
+  if (window.flowdesk) {
+    window.flowdesk.onOpenFile(f => {
+      try { openBuffer(f.data, f.name); msg(`Loaded ${f.name}`); } catch (e) { alert(`${f.name}: ${e.message}`); }
+    });
+    window.flowdesk.ready();
+  }
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "flowdesk",
+  "productName": "FlowDesk",
+  "version": "1.4.0",
+  "description": "Flow cytometry FCS analysis workspace",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-packager . FlowDesk --platform=darwin --arch=universal --out=dist --overwrite --icon=build/icon.icns --ignore=^/test --ignore=^/dist --ignore=^/build --ignore=^/\\.claude --extend-info=build/Info.extra.plist",
+    "dist:win": "electron-packager . FlowDesk --platform=win32 --arch=x64 --out=dist --overwrite --ignore=^/test --ignore=^/dist --ignore=^/build --ignore=^/\\.claude",
+    "dist:dmg": "npm run dist:mac && build/make_dmg.sh universal"
+  },
+  "devDependencies": {
+    "@electron/packager": "18.3.6",
+    "electron": "33.2.1"
+  }
+}
